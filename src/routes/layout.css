@@ -1,0 +1,54 @@
+@import 'tailwindcss';
+
+:root {
+	--font-cute: 'Fredoka', sans-serif;
+	--font-body: 'Quicksand', sans-serif;
+}
+
+body {
+	font-family: var(--font-body);
+}
+
+h1, h2, h3, h4, h5, h6, .font-cute {
+	font-family: var(--font-cute);
+}
+
+/* Scrollbar Lucu */
+::-webkit-scrollbar {
+	width: 10px;
+}
+::-webkit-scrollbar-track {
+	background: #FFF7ED;
+}
+::-webkit-scrollbar-thumb {
+	background: #FDBA74;
+	border-radius: 10px;
+}
+::-webkit-scrollbar-thumb:hover {
+	background: #F97316;
+}
+@plugin '@tailwindcss/forms';
+@plugin '@tailwindcss/typography';
+
+/* Custom colors untuk warm tones */
+@theme {
+	--color-orange-warm: #f97316;
+	--color-cream: #fef3c7;
+	--color-brown-light: #d4a574;
+}
+
+/* Leaflet custom styles */
+.leaflet-container {
+	font-family: inherit;
+}
+
+.leaflet-popup-content-wrapper {
+	border-radius: 0.5rem;
+}
+
+/* Smooth transitions */
+* {
+	transition-property: color, background-color, border-color, text-decoration-color, fill, stroke;
+	transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+	transition-duration: 150ms;
+}
