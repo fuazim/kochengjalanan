@@ -1,7 +1,9 @@
 <script lang="ts">
 	import { signIn } from '$lib/stores/auth';
 	import { goto } from '$app/navigation';
-	import Lottie from '$lib/components/Lottie.svelte';
+	import Model3D from '$lib/components/Model3D.svelte';
+	import RocketIcon from '$lib/components/RocketIcon.svelte';
+	import PawIcon from '$lib/components/PawIcon.svelte';
 
 	let email = $state('');
 	let password = $state('');
@@ -33,29 +35,21 @@
 </svelte:head>
 
 <div
-	class="relative flex min-h-screen items-center justify-center overflow-hidden bg-[#FFF7ED] p-4"
+	class="relative flex min-h-screen items-center justify-center overflow-hidden bg-white p-4"
 >
-	<!-- Background Decorations -->
 	<div
-		class="absolute top-[-50px] right-[-50px] h-48 w-48 rounded-full bg-orange-200 opacity-50 blur-xl"
-	></div>
-	<div
-		class="absolute bottom-[-20px] left-[-20px] h-32 w-32 rounded-full bg-yellow-200 opacity-50 blur-xl"
-	></div>
-
-	<div
-		class="relative z-10 w-full max-w-md transform rounded-3xl border-2 border-orange-50 bg-white/80 p-8 shadow-xl shadow-orange-100/50 backdrop-blur-sm transition-transform duration-300 hover:scale-[1.01]"
+		class="relative z-10 w-full max-w-md rounded-3xl border border-gray-300 bg-white p-8"
 	>
 		<div class="mb-8 text-center">
 			<!-- Logo Wrapper Relative - Size kecil untuk layout -->
-			<div class="relative mx-auto mb-6 flex h-12 w-12 items-center justify-center">
-				<!-- Lottie Absolute & Oversized -->
-				<div class="absolute top-1/2 left-1/2 h-36 w-36 -translate-x-1/2 -translate-y-1/2">
-					<Lottie path="/animations/logo.json" />
+			<div class="relative mx-auto mb-12 flex h-12 w-12 items-center justify-center">
+				<!-- Model3D Absolute & Oversized -->
+				<div class="absolute top-1/2 left-1/2 flex h-24 w-24 -translate-x-1/2 -translate-y-[5%] items-center justify-center">
+					<Model3D modelPath="/models/cat-model.glb" width="200%" height="200%" />
 				</div>
 			</div>
-			<h1 class="font-cute text-3xl font-bold text-[#F97316]">Kocheng Jalanan</h1>
-			<p class="font-medium text-gray-500">Portal Admin Paling Gemoy</p>
+			<h1 class="font-playwrite text-3xl font-normal bg-linear-to-r from-[#fcef04] to-[#dc419b] bg-clip-text text-transparent rotate-[-5deg] origin-center py-4">Kocheng</h1>
+			<p class="font-medium text-gray-500">Siap untuk menyelamatkan kocheng hari ini?</p>
 		</div>
 
 		{#if error}
@@ -75,7 +69,7 @@
 					id="email"
 					bind:value={email}
 					required
-					class="w-full rounded-2xl border-2 border-orange-100 px-5 py-3 font-sans text-gray-700 transition-all outline-none placeholder:text-gray-300 focus:border-orange-300 focus:ring-4 focus:ring-orange-100"
+					class="w-full rounded-2xl bg-gray-50 px-5 py-3 font-sans text-gray-700 transition-all outline-none placeholder:text-gray-300 focus:bg-white focus:ring-2 focus:ring-pink-200"
 					placeholder="admin@example.com"
 				/>
 			</div>
@@ -89,7 +83,7 @@
 					id="password"
 					bind:value={password}
 					required
-					class="w-full rounded-2xl border-2 border-orange-100 px-5 py-3 font-sans text-gray-700 transition-all outline-none placeholder:text-gray-300 focus:border-orange-300 focus:ring-4 focus:ring-orange-100"
+					class="w-full rounded-2xl bg-gray-50 px-5 py-3 font-sans text-gray-700 transition-all outline-none placeholder:text-gray-300 focus:bg-white focus:ring-2 focus:ring-pink-200"
 					placeholder="••••••••"
 				/>
 			</div>
@@ -97,14 +91,22 @@
 			<button
 				type="submit"
 				disabled={isLoading}
-				class="w-full cursor-pointer rounded-2xl bg-gradient-to-r from-[#F97316] to-[#FB923C] py-3.5 text-lg font-bold text-white transition-all hover:-translate-y-0.5 hover:shadow-lg hover:shadow-orange-200/50 active:scale-95 disabled:cursor-not-allowed disabled:opacity-50"
+				class="w-full cursor-pointer rounded-2xl bg-linear-to-r from-[#fcef04] to-[#dc419b] py-3.5 text-lg font-bold text-white transition-all hover:-translate-y-0.5 active:scale-95 disabled:cursor-not-allowed disabled:opacity-50 flex items-center justify-center gap-2"
 			>
-				{isLoading ? 'Sedang Memuat... 🐾' : 'Masuk Sekarang! 🚀'}
+				{#if isLoading}
+					<span class="flex items-center gap-2">
+						<span>Sedang Memuat...</span>
+						<PawIcon size={18} />
+					</span>
+				{:else}
+					<span>Masuk Sekarang!</span>
+					<RocketIcon size={20} />
+				{/if}
 			</button>
 		</form>
 
 		<div class="mt-8 text-center text-sm text-gray-400">
-			<a href="/" class="transition-colors hover:text-orange-500">← Kembali ke Peta</a>
+			<a href="/" class="transition-colors hover:bg-linear-to-r hover:from-[#fcef04] hover:to-[#dc419b] hover:bg-clip-text hover:text-transparent">← Kembali ke Peta</a>
 		</div>
 	</div>
 </div>

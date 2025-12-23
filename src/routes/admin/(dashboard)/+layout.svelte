@@ -26,14 +26,14 @@
 </script>
 
 {#if isChecking}
-	<div class="flex min-h-screen items-center justify-center bg-slate-50">
+	<div class="flex min-h-screen items-center justify-center bg-white">
 		<div class="flex animate-pulse flex-col items-center">
 			<span class="mb-2 text-4xl">🐱</span>
 			<p class="font-medium text-slate-500">Memuat...</p>
 		</div>
 	</div>
 {:else}
-	<div class="flex min-h-screen flex-col bg-slate-50 font-sans md:flex-row">
+	<div class="flex min-h-screen flex-col bg-white font-sans md:flex-row">
 		<Sidebar />
 		<main class="h-[calc(100vh-60px)] flex-1 overflow-y-auto md:h-screen">
 			<div class="mx-auto max-w-7xl p-4 md:p-8">

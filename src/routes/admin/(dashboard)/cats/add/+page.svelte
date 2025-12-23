@@ -19,6 +19,91 @@
 	let healthNotes = $state('');
 	let isNeutered = $state(false);
 
+	// Location search
+	type LocationSuggestion = {
+		display_name: string;
+		lat: string;
+		lon: string;
+	};
+
+	let locationSuggestions = $state<LocationSuggestion[]>([]);
+	let isLocationSearching = $state(false);
+	let locationSearchTimeout: ReturnType<typeof setTimeout> | null = null;
+	let locationAbortController: AbortController | null = null;
+	let skipNextLocationSearch = false;
+
+	function clearLocationSearch() {
+		if (locationSearchTimeout) {
+			clearTimeout(locationSearchTimeout);
+			locationSearchTimeout = null;
+		}
+		if (locationAbortController) {
+			locationAbortController.abort();
+			locationAbortController = null;
+		}
+	}
+
+	function applyLocationSuggestion(suggestion: LocationSuggestion) {
+		clearLocationSearch();
+		skipNextLocationSearch = true;
+		locationName = suggestion.display_name;
+		latitude = Number(suggestion.lat);
+		longitude = Number(suggestion.lon);
+		locationSuggestions = [];
+		isLocationSearching = false;
+	}
+
+	async function fetchLocationSuggestions(query: string) {
+		if (locationAbortController) {
+			locationAbortController.abort();
+		}
+		locationAbortController = new AbortController();
+		isLocationSearching = true;
+		const currentQuery = query;
+		try {
+			const url = `https://nominatim.openstreetmap.org/search?format=json&limit=5&addressdetails=1&q=${encodeURIComponent(query)}`;
+			const response = await fetch(url, {
+				signal: locationAbortController.signal,
+				headers: {
+					'Accept-Language': 'id'
+				}
+			});
+			if (!response.ok) {
+				throw new Error('Gagal mencari lokasi');
+			}
+			const results = (await response.json()) as LocationSuggestion[];
+			if (locationName.trim() === currentQuery) {
+				locationSuggestions = results;
+			}
+		} catch (e: any) {
+			if (e.name !== 'AbortError') {
+				locationSuggestions = [];
+			}
+		} finally {
+			isLocationSearching = false;
+		}
+	}
+
+	$effect(() => {
+		if (typeof window === 'undefined') return;
+		if (skipNextLocationSearch) {
+			skipNextLocationSearch = false;
+			return;
+		}
+		const query = locationName.trim();
+		if (query.length < 3) {
+			clearLocationSearch();
+			locationSuggestions = [];
+			isLocationSearching = false;
+			return;
+		}
+		clearLocationSearch();
+		locationSuggestions = [];
+		locationSearchTimeout = setTimeout(() => {
+			fetchLocationSuggestions(query);
+		}, 350);
+	});
+
 	// Image upload
 	let imageFiles: FileList | null = $state(null);
 	let imagePreviewUrls = $state<string[]>([]);
@@ -108,7 +193,7 @@
 <div class="space-y-6">
 	<div class="flex items-center justify-between">
 		<div>
-			<h1 class="font-cute text-3xl font-bold text-slate-800">Tambah Kocheng Baru 🐱</h1>
+			<h1 class="font-cute text-3xl font-bold text-slate-800">Tambah Kocheng Baru</h1>
 			<p class="mt-1 text-slate-500">Daftarkan kocheng jalanan yang kamu temui!</p>
 		</div>
 		<a
@@ -121,7 +206,7 @@
 
 	{#if error}
 		<div
-			class="flex items-center gap-2 rounded-xl border border-red-100 bg-red-50 p-4 text-sm text-red-600"
+			class="flex items-center gap-2 rounded-xl bg-red-50/80 p-4 text-sm text-red-600"
 		>
 			<span>😿</span>
 			{error}
@@ -130,8 +215,8 @@
 
 	<form onsubmit={handleSubmit} class="space-y-8">
 		<!-- Basic Info -->
-		<div class="rounded-2xl border border-orange-100 bg-white p-6 shadow-sm">
-			<h2 class="mb-4 text-lg font-bold text-slate-700">📋 Informasi Dasar</h2>
+		<div class="rounded-3xl border border-slate-100 bg-white p-6 shadow-[0_4px_0_0_rgba(0,0,0,0.08)]">
+			<h2 class="mb-4 text-lg font-bold text-slate-700">Informasi Dasar</h2>
 			<div class="grid gap-4 md:grid-cols-2">
 				<div>
 					<label for="name" class="mb-1 block text-sm font-medium text-slate-600"
@@ -142,7 +227,7 @@
 						id="name"
 						bind:value={name}
 						required
-						class="w-full rounded-xl border-2 border-slate-200 px-4 py-2.5 transition-colors focus:border-orange-300 focus:outline-none"
+						class="w-full rounded-2xl border-2 border-slate-100 bg-white px-4 py-3 text-slate-600 transition-all outline-none placeholder:text-slate-300 focus:border-orange-300 focus:ring-4 focus:ring-orange-100"
 						placeholder="Si Manis"
 					/>
 				</div>
@@ -153,7 +238,7 @@
 						type="text"
 						id="color"
 						bind:value={color}
-						class="w-full rounded-xl border-2 border-slate-200 px-4 py-2.5 transition-colors focus:border-orange-300 focus:outline-none"
+						class="w-full rounded-2xl border-2 border-slate-100 bg-white px-4 py-3 text-slate-600 transition-all outline-none placeholder:text-slate-300 focus:border-orange-300 focus:ring-4 focus:ring-orange-100"
 						placeholder="Orange, Hitam Putih, dll"
 					/>
 				</div>
@@ -164,7 +249,7 @@
 					<select
 						id="gender"
 						bind:value={gender}
-						class="w-full rounded-xl border-2 border-slate-200 px-4 py-2.5 transition-colors focus:border-orange-300 focus:outline-none"
+						class="w-full rounded-2xl border-2 border-slate-100 bg-white px-4 py-3 text-slate-600 transition-all outline-none placeholder:text-slate-300 focus:border-orange-300 focus:ring-4 focus:ring-orange-100"
 					>
 						<option value="unknown">Tidak Diketahui</option>
 						<option value="jantan">Jantan ♂️</option>
@@ -178,7 +263,7 @@
 					<select
 						id="age"
 						bind:value={ageEstimate}
-						class="w-full rounded-xl border-2 border-slate-200 px-4 py-2.5 transition-colors focus:border-orange-300 focus:outline-none"
+						class="w-full rounded-2xl border-2 border-slate-100 bg-white px-4 py-3 text-slate-600 transition-all outline-none placeholder:text-slate-300 focus:border-orange-300 focus:ring-4 focus:ring-orange-100"
 					>
 						<option value="kitten">Kitten 🐱</option>
 						<option value="dewasa">Dewasa 🐈</option>
@@ -193,7 +278,7 @@
 						id="description"
 						bind:value={description}
 						rows="3"
-						class="w-full rounded-xl border-2 border-slate-200 px-4 py-2.5 transition-colors focus:border-orange-300 focus:outline-none"
+						class="w-full rounded-2xl border-2 border-slate-100 bg-white px-4 py-3 text-slate-600 transition-all outline-none placeholder:text-slate-300 focus:border-orange-300 focus:ring-4 focus:ring-orange-100"
 						placeholder="Ceritakan tentang kocheng ini..."
 					></textarea>
 				</div>
@@ -202,7 +287,7 @@
 						type="checkbox"
 						id="neutered"
 						bind:checked={isNeutered}
-						class="h-5 w-5 rounded border-slate-300 text-orange-500 focus:ring-orange-300"
+						class="h-5 w-5 rounded border-0 bg-white text-orange-500 focus:outline focus:outline-2 focus:outline-orange-200 focus:outline-offset-2"
 					/>
 					<label for="neutered" class="text-sm font-medium text-slate-600"
 						>Sudah Steril / Kastrasi</label
@@ -212,8 +297,8 @@
 		</div>
 
 		<!-- Health Status -->
-		<div class="rounded-2xl border border-orange-100 bg-white p-6 shadow-sm">
-			<h2 class="mb-4 text-lg font-bold text-slate-700">🏥 Status Kesehatan</h2>
+		<div class="rounded-3xl border border-slate-100 bg-white p-6 shadow-[0_4px_0_0_rgba(0,0,0,0.08)]">
+			<h2 class="mb-4 text-lg font-bold text-slate-700">Status Kesehatan</h2>
 			<div class="grid gap-4 md:grid-cols-2">
 				<div>
 					<label for="health" class="mb-1 block text-sm font-medium text-slate-600"
@@ -222,7 +307,7 @@
 					<select
 						id="health"
 						bind:value={healthStatus}
-						class="w-full rounded-xl border-2 border-slate-200 px-4 py-2.5 transition-colors focus:border-orange-300 focus:outline-none"
+						class="w-full rounded-2xl border-2 border-slate-100 bg-white px-4 py-3 text-slate-600 transition-all outline-none placeholder:text-slate-300 focus:border-orange-300 focus:ring-4 focus:ring-orange-100"
 					>
 						<option value="sehat">💚 Sehat</option>
 						<option value="sakit">💛 Sakit</option>
@@ -237,7 +322,7 @@
 						type="text"
 						id="healthNotes"
 						bind:value={healthNotes}
-						class="w-full rounded-xl border-2 border-slate-200 px-4 py-2.5 transition-colors focus:border-orange-300 focus:outline-none"
+						class="w-full rounded-2xl border-2 border-slate-100 bg-white px-4 py-3 text-slate-600 transition-all outline-none placeholder:text-slate-300 focus:border-orange-300 focus:ring-4 focus:ring-orange-100"
 						placeholder="Opsional: perlu obat mata, dll"
 					/>
 				</div>
@@ -245,10 +330,10 @@
 		</div>
 
 		<!-- Location -->
-		<div class="rounded-2xl border border-orange-100 bg-white p-6 shadow-sm">
-			<h2 class="mb-4 text-lg font-bold text-slate-700">📍 Lokasi</h2>
+		<div class="rounded-3xl border border-slate-100 bg-white p-6 shadow-[0_4px_0_0_rgba(0,0,0,0.08)]">
+			<h2 class="mb-4 text-lg font-bold text-slate-700">Lokasi</h2>
 			<div class="grid gap-4 md:grid-cols-2">
-				<div>
+				<div class="relative">
 					<label for="locationName" class="mb-1 block text-sm font-medium text-slate-600"
 						>Nama Lokasi</label
 					>
@@ -256,9 +341,31 @@
 						type="text"
 						id="locationName"
 						bind:value={locationName}
-						class="w-full rounded-xl border-2 border-slate-200 px-4 py-2.5 transition-colors focus:border-orange-300 focus:outline-none"
+						class="w-full rounded-2xl border-2 border-slate-100 bg-white px-4 py-3 text-slate-600 transition-all outline-none placeholder:text-slate-300 focus:border-orange-300 focus:ring-4 focus:ring-orange-100"
+						autocomplete="off"
 						placeholder="Taman Menteng"
 					/>
+					{#if locationSuggestions.length > 0}
+						<div
+							class="absolute z-20 mt-2 w-full overflow-hidden rounded-2xl border border-slate-100 bg-white shadow-[0_4px_0_0_rgba(0,0,0,0.08)]"
+						>
+							{#each locationSuggestions as suggestion}
+								<button
+									type="button"
+									onclick={() => applyLocationSuggestion(suggestion)}
+									class="w-full px-4 py-2 text-left text-sm text-slate-600 transition-colors hover:bg-orange-50"
+								>
+									{suggestion.display_name}
+								</button>
+							{/each}
+						</div>
+					{:else if isLocationSearching}
+						<div
+							class="absolute z-20 mt-2 w-full rounded-2xl border border-slate-100 bg-white px-4 py-2 text-sm text-slate-400 shadow-[0_4px_0_0_rgba(0,0,0,0.08)]"
+						>
+							Mencari lokasi...
+						</div>
+					{/if}
 				</div>
 				<div>
 					<label for="landmark" class="mb-1 block text-sm font-medium text-slate-600"
@@ -268,7 +375,7 @@
 						type="text"
 						id="landmark"
 						bind:value={locationLandmark}
-						class="w-full rounded-xl border-2 border-slate-200 px-4 py-2.5 transition-colors focus:border-orange-300 focus:outline-none"
+						class="w-full rounded-2xl border-2 border-slate-100 bg-white px-4 py-3 text-slate-600 transition-all outline-none placeholder:text-slate-300 focus:border-orange-300 focus:ring-4 focus:ring-orange-100"
 						placeholder="Dekat warung makan"
 					/>
 				</div>
@@ -279,12 +386,12 @@
 		</div>
 
 		<!-- Photos -->
-		<div class="rounded-2xl border border-orange-100 bg-white p-6 shadow-sm">
-			<h2 class="mb-4 text-lg font-bold text-slate-700">📸 Foto Kocheng</h2>
+		<div class="rounded-3xl border border-slate-100 bg-white p-6 shadow-[0_4px_0_0_rgba(0,0,0,0.08)]">
+			<h2 class="mb-4 text-lg font-bold text-slate-700">Foto Kocheng</h2>
 			<div>
 				<label
 					for="photos"
-					class="flex cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed border-slate-300 bg-slate-50 p-8 transition-colors hover:border-orange-300 hover:bg-orange-50"
+					class="flex cursor-pointer flex-col items-center justify-center rounded-xl bg-white/80 p-8 transition-colors hover:bg-orange-50/70"
 				>
 					<span class="mb-2 text-4xl">📷</span>
 					<span class="text-sm font-medium text-slate-600">Klik untuk upload foto</span>
@@ -323,9 +430,9 @@
 			<button
 				type="submit"
 				disabled={isSubmitting}
-				class="flex-1 rounded-2xl bg-gradient-to-r from-[#F97316] to-[#FB923C] py-3.5 text-lg font-bold text-white transition-all hover:-translate-y-0.5 hover:shadow-lg hover:shadow-orange-200/50 active:scale-95 disabled:cursor-not-allowed disabled:opacity-50"
+				class="flex-1 rounded-2xl bg-linear-to-r from-[#fcef04] to-[#dc419b] py-3.5 text-lg font-bold text-white transition-all hover:-translate-y-0.5 active:scale-95 disabled:cursor-not-allowed disabled:opacity-50"
 			>
-				{isSubmitting ? 'Menyimpan... 🐾' : 'Simpan Kocheng 🚀'}
+				{isSubmitting ? 'Menyimpan...' : 'Simpan Kocheng'}
 			</button>
 			<a
 				href="/admin/cats"

@@ -20,9 +20,11 @@
 	/>
 </svelte:head>
 
-<div class="flex h-screen flex-col overflow-hidden bg-[#FFF7ED]">
+<div class="flex h-screen flex-col overflow-x-hidden overflow-y-visible bg-white">
 	<!-- Header -->
-	<Navbar />
+	<div class="overflow-visible">
+		<Navbar />
+	</div>
 
 	<!-- Main Content - Map dengan Filter -->
 	<main class="relative h-full w-full flex-1 overflow-hidden">
@@ -41,10 +43,16 @@
 		margin: 0;
 		padding: 0;
 		overflow-x: hidden;
+		overflow-y: visible;
 	}
 
 	:global(html) {
 		height: 100%;
 		overflow-x: hidden;
+		overflow-y: visible;
+	}
+	
+	:global(header) {
+		overflow: visible !important;
 	}
 </style>

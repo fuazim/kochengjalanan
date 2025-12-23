@@ -56,7 +56,7 @@
 		</div>
 		<a
 			href="/admin/cats/add"
-			class="flex items-center gap-2 rounded-2xl bg-gradient-to-r from-[#F97316] to-[#FB923C] px-6 py-3 font-bold text-white transition-all hover:-translate-y-0.5 hover:shadow-lg hover:shadow-orange-200/50"
+			class="flex items-center gap-2 rounded-2xl bg-linear-to-r from-[#fcef04] to-[#dc419b] px-6 py-3 font-bold text-white transition-all hover:-translate-y-0.5"
 		>
 			<span class="text-xl">+</span> Tambah Kocheng
 		</a>

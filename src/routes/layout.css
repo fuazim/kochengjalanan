@@ -3,6 +3,7 @@
 :root {
 	--font-cute: 'Fredoka', sans-serif;
 	--font-body: 'Quicksand', sans-serif;
+	--font-playwrite: 'Playwrite CU', cursive;
 }
 
 body {
@@ -11,6 +12,10 @@ body {
 
 h1, h2, h3, h4, h5, h6, .font-cute {
 	font-family: var(--font-cute);
+}
+
+.font-playwrite {
+	font-family: var(--font-playwrite);
 }
 
 /* Scrollbar Lucu */

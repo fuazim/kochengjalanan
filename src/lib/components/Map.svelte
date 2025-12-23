@@ -116,39 +116,43 @@
 
 		const marker = L.marker([cat.latitude, cat.longitude], { icon: customIcon });
 
+		const locationLabel = cat.location_name || 'Lokasi tidak diketahui';
+		const shortLocation =
+			locationLabel.length > 60 ? `${locationLabel.slice(0, 57)}...` : locationLabel;
+		const locationTitle = locationLabel.replace(/"/g, '&quot;');
+
 		// Create CUTE popup HTML content
 		const imageUrl = cat.thumbnail_url || cat.photos?.[0] || '';
 		const imageHtml = imageUrl
-			? `<div class="relative h-48 overflow-hidden rounded-t-2xl group">
-				<img src="${imageUrl}" alt="${cat.name}" class="w-full h-full object-cover transform group-hover:scale-110 transition-transform duration-500" />
-				<div class="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent opacity-60"></div>
-				<div class="absolute bottom-3 left-3 text-white">
-					<p class="text-xs font-medium bg-white/20 backdrop-blur-sm px-2 py-1 rounded-full border border-white/30">
-						📍 ${cat.location_name || 'Lokasi tidak diketahui'}
-					</p>
+			? `<div class="relative h-44 overflow-hidden rounded-t-3xl">
+				<img src="${imageUrl}" alt="${cat.name}" class="h-full w-full object-cover" />
+				<div class="absolute inset-x-0 bottom-3 px-3">
+					<span class="inline-flex max-w-full items-center truncate rounded-full border border-white/60 bg-white/85 px-2.5 py-1 text-[11px] font-semibold text-slate-700 shadow-sm backdrop-blur" title="${locationTitle}">
+						${shortLocation}
+					</span>
 				</div>
 			   </div>`
-			: `<div class="w-full h-48 bg-orange-50 flex items-center justify-center rounded-t-2xl"><span class="text-6xl animate-pulse">🐱</span></div>`;
+			: `<div class="flex h-44 items-center justify-center rounded-t-3xl bg-slate-50 text-sm font-semibold text-slate-400">No photo</div>`;
 
 		const descriptionHtml = cat.description
-			? `<p class="text-sm text-slate-600 line-clamp-2 leading-relaxed italic">"${cat.description}"</p>`
+			? `<p class="text-sm text-slate-600 line-clamp-2 leading-relaxed">${cat.description}</p>`
 			: '';
 
 		const infoItems = [];
 		if (cat.gender && cat.gender !== 'unknown') {
-			infoItems.push(`<span class="flex items-center gap-1 bg-slate-100 px-2 py-1 rounded-lg text-xs font-bold text-slate-600">
-				${cat.gender === 'jantan' ? '♂️ Jantan' : '♀️ Betina'}
+			infoItems.push(`<span class="rounded-full border border-slate-200 bg-slate-50 px-2.5 py-1 text-[11px] font-semibold text-slate-600">
+				${cat.gender === 'jantan' ? 'Jantan' : 'Betina'}
 			</span>`);
 		}
 		if (cat.age_estimate) {
 			const ageLabel =
 				cat.age_estimate === 'kitten'
-					? '👶 Kitten'
+					? 'Kitten'
 					: cat.age_estimate === 'dewasa'
-						? '🧑 Dewasa'
-						: '👴 Senior';
+						? 'Dewasa'
+						: 'Senior';
 			infoItems.push(
-				`<span class="flex items-center gap-1 bg-slate-100 px-2 py-1 rounded-lg text-xs font-bold text-slate-600">${ageLabel}</span>`
+				`<span class="rounded-full border border-slate-200 bg-slate-50 px-2.5 py-1 text-[11px] font-semibold text-slate-600">${ageLabel}</span>`
 			);
 		}
 
@@ -158,32 +162,27 @@
 				: '';
 
 		const popupHtml = `
-			<div class="font-sans rounded-2xl bg-white shadow-xl overflow-hidden w-[280px] border-2 border-orange-100">
+			<div class="font-sans w-[280px] overflow-hidden rounded-3xl border border-slate-100 bg-white shadow-[0_6px_18px_rgba(15,23,42,0.08)]">
 				${imageHtml}
-				<div class="p-5 space-y-3 bg-white relative">
-					<div class="absolute -top-6 right-4 rotate-3 transform hover:rotate-6 transition-transform">
-						<span class="text-3xl filter drop-shadow-md">🐾</span>
-					</div>
-					
-					<div>
-						<h3 class="text-2xl font-bold text-slate-800 font-cute mb-1">${cat.name}</h3>
-						<span class="inline-block px-3 py-1 text-xs font-bold rounded-full border shadow-sm ${getHealthStatusColor(cat.health_status)}">
+				<div class="space-y-3 bg-white p-5">
+					<div class="space-y-2">
+						<h3 class="font-cute text-xl font-bold text-slate-800">${cat.name}</h3>
+						<span class="inline-flex items-center rounded-full border px-3 py-1 text-xs font-bold ${getHealthStatusColor(cat.health_status)}">
 							${getHealthStatusLabel(cat.health_status)}
 						</span>
 					</div>
-					
 					${descriptionHtml}
 					${infoHtml}
-
-					<div class="pt-3 border-t border-slate-100 mt-2">
-						<button class="w-full bg-[#F97316] hover:bg-orange-600 text-white font-bold py-2 px-4 rounded-xl text-sm transition-colors shadow-orange-200 shadow-lg flex items-center justify-center gap-2 group">
+					<div class="pt-3">
+						<a href="/cats/${cat.id}" class="group flex w-full items-center justify-center gap-2 rounded-2xl bg-linear-to-r from-[#fcef04] to-[#dc419b] px-4 py-2.5 text-sm font-bold text-white transition-transform hover:-translate-y-0.5">
 							<span>Lihat Detailnya</span>
-							<span class="group-hover:translate-x-1 transition-transform">→</span>
-						</button>
+							<span class="transition-transform group-hover:translate-x-1">-&gt;</span>
+						</a>
 					</div>
 				</div>
 			</div>
 		`;
+
 
 		marker.bindPopup(popupHtml, {
 			maxWidth: 300,
@@ -273,23 +272,21 @@
 	}
 
 	:global(.leaflet-control-zoom a) {
-		background-color: white !important;
-		color: #f97316 !important;
+		background-image: linear-gradient(135deg, #fcef04, #dc419b) !important;
+		color: #ffffff !important;
 		border-radius: 9999px !important;
 		width: 40px !important;
 		height: 40px !important;
 		line-height: 40px !important;
 		font-weight: bold !important;
 		font-size: 18px !important;
-		border: 2px solid #ffedd5 !important;
+		border: none !important;
 		transition: all 0.2s;
 	}
 
 	:global(.leaflet-control-zoom a:hover) {
-		background-color: #fff7ed !important;
-		color: #ea580c !important;
+		filter: brightness(1.05);
 		transform: scale(1.1);
-		border-color: #fdba74 !important;
 	}
 
 	:global(.leaflet-touch .leaflet-control-layers, .leaflet-touch .leaflet-bar) {

@@ -3,9 +3,7 @@
 	import { signOut } from '$lib/stores/auth';
 	import { goto } from '$app/navigation';
 
-	import Lottie from '$lib/components/Lottie.svelte';
-
-	let isMobileOpen = $state(false);
+let isMobileOpen = $state(false);
 
 	const menus = [
 		{
@@ -53,25 +51,17 @@
 <!-- Sidebar -->
 <aside
 	class="
-	fixed inset-y-0 left-0 z-30 w-72 transform border-r border-[#FED7AA] bg-white text-slate-600 shadow-xl shadow-orange-100/50 transition-transform duration-300 ease-in-out
+	fixed inset-y-0 left-0 z-30 w-72 transform border-r border-gray-300 bg-white text-slate-600 transition-transform duration-300 ease-in-out
 	{isMobileOpen ? 'translate-x-0' : '-translate-x-full'}
 	md:relative md:translate-x-0
 "
 >
 	<div class="p-8 pb-4">
-		<h1 class="font-cute flex items-center gap-4 text-2xl font-bold tracking-wide text-[#F97316]">
-			<div class="relative flex h-12 w-12 items-center justify-center">
-				<div class="absolute top-1/2 left-1/2 h-24 w-24 -translate-x-1/2 -translate-y-1/2">
-					<Lottie path="/animations/logo.json" />
-				</div>
-			</div>
-			Kocheng Admin
-		</h1>
-		<p
-			class="mt-2 inline-block rounded-full border border-orange-100 bg-orange-50 px-3 py-1 text-xs font-medium text-orange-400"
-		>
-			v1.0.0 • Edisi Gemoy
-		</p>
+		<div class="flex flex-col leading-tight">
+			<span class="font-playwrite text-2xl font-normal bg-linear-to-r from-[#fcef04] to-[#dc419b] bg-clip-text text-transparent rotate-[-5deg] origin-center inline-block py-4">
+				Kocheng
+			</span>
+		</div>
 	</div>
 
 	<nav class="mt-4 space-y-3 px-6">
