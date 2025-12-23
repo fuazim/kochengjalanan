@@ -2,6 +2,7 @@
 	import { onMount } from 'svelte';
 	import Map from '$lib/components/Map.svelte';
 	import FilterBar from '$lib/components/FilterBar.svelte';
+	import Navbar from '$lib/components/Navbar.svelte';
 	import { filteredCats, fetchCats, isLoading } from '$lib/stores/cats';
 
 	let cats = $derived($filteredCats);
@@ -21,20 +22,7 @@
 
 <div class="flex h-screen flex-col overflow-hidden bg-[#FFF7ED]">
 	<!-- Header -->
-	<header
-		class="relative z-20 shrink-0 border-b border-orange-100 bg-white/95 text-[#F97316] shadow-sm backdrop-blur-md"
-	>
-		<div class="container mx-auto flex items-center justify-center px-4 py-3">
-			<a href="/" class="group flex items-center gap-2 transition-transform hover:scale-105">
-				<span class="animate-bounce text-3xl drop-shadow-sm filter md:text-4xl">🐱</span>
-				<div>
-					<h1 class="font-cute text-xl font-bold tracking-wide text-slate-800 md:text-3xl">
-						Kocheng<span class="text-[#F97316]">Jalanan</span>
-					</h1>
-				</div>
-			</a>
-		</div>
-	</header>
+	<Navbar />
 
 	<!-- Main Content - Map dengan Filter -->
 	<main class="relative h-full w-full flex-1 overflow-hidden">

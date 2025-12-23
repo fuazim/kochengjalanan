@@ -3,8 +3,12 @@
 	import { cats as catsStore, fetchCats, deleteCat, isLoading } from '$lib/stores/cats';
 	import type { Cat } from '$lib/types/supabase';
 
+	import DeleteConfirmationModal from '$lib/components/DeleteConfirmationModal.svelte';
+
 	let searchQuery = $state('');
 	let cats = $derived($catsStore);
+	let showDeleteModal = $state(false);
+	let catToDeleteId = $state<string | null>(null);
 
 	let filteredCats = $derived(
 		cats.filter(
@@ -18,9 +22,23 @@
 		fetchCats();
 	});
 
-	async function handleDelete(id: string) {
-		if (confirm('Yakin ingin menghapus data kocheng ini? 😿')) {
-			await deleteCat(id);
+	function initDelete(id: string) {
+		catToDeleteId = id;
+		showDeleteModal = true;
+	}
+
+	function cancelDelete() {
+		showDeleteModal = false;
+		catToDeleteId = null;
+	}
+
+	async function confirmDelete() {
+		if (catToDeleteId) {
+			const success = await deleteCat(catToDeleteId);
+			if (success) {
+				await fetchCats();
+			}
+			cancelDelete();
 		}
 	}
 </script>
@@ -85,12 +103,11 @@
 				<tbody class="divide-y divide-slate-50">
 					{#if filteredCats.length === 0}
 						<tr>
-							<td
-								colspan="5"
-								class="flex flex-col items-center px-6 py-12 text-center text-slate-400"
-							>
-								<span class="mb-2 text-4xl opacity-50 grayscale">😿</span>
-								<p>Tidak ada kocheng yang ditemukan.</p>
+							<td colspan="5" class="px-6 py-12 text-center text-slate-400">
+								<div class="flex flex-col items-center justify-center">
+									<span class="mb-2 text-4xl opacity-50 grayscale">😿</span>
+									<p>Tidak ada kocheng yang ditemukan.</p>
+								</div>
 							</td>
 						</tr>
 					{:else}
@@ -164,7 +181,7 @@
 											</svg>
 										</a>
 										<button
-											onclick={() => handleDelete(cat.id)}
+											onclick={() => initDelete(cat.id)}
 											class="transform rounded-xl p-2 text-red-500 transition-colors duration-200 hover:scale-110 hover:bg-red-50"
 											title="Hapus"
 										>
@@ -187,3 +204,9 @@
 		</div>
 	</div>
 </div>
+
+<DeleteConfirmationModal
+	isOpen={showDeleteModal}
+	onConfirm={confirmDelete}
+	onCancel={cancelDelete}
+/>

@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { signIn } from '$lib/stores/auth';
 	import { goto } from '$app/navigation';
+	import Lottie from '$lib/components/Lottie.svelte';
 
 	let email = $state('');
 	let password = $state('');
@@ -46,7 +47,13 @@
 		class="relative z-10 w-full max-w-md transform rounded-3xl border-2 border-orange-50 bg-white/80 p-8 shadow-xl shadow-orange-100/50 backdrop-blur-sm transition-transform duration-300 hover:scale-[1.01]"
 	>
 		<div class="mb-8 text-center">
-			<div class="mb-4 inline-block animate-bounce text-6xl">🐱</div>
+			<!-- Logo Wrapper Relative - Size kecil untuk layout -->
+			<div class="relative mx-auto mb-6 flex h-12 w-12 items-center justify-center">
+				<!-- Lottie Absolute & Oversized -->
+				<div class="absolute top-1/2 left-1/2 h-36 w-36 -translate-x-1/2 -translate-y-1/2">
+					<Lottie path="/animations/logo.json" />
+				</div>
+			</div>
 			<h1 class="font-cute text-3xl font-bold text-[#F97316]">Kocheng Jalanan</h1>
 			<p class="font-medium text-gray-500">Portal Admin Paling Gemoy</p>
 		</div>

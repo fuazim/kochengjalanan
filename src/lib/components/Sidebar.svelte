@@ -3,6 +3,8 @@
 	import { signOut } from '$lib/stores/auth';
 	import { goto } from '$app/navigation';
 
+	import Lottie from '$lib/components/Lottie.svelte';
+
 	let isMobileOpen = $state(false);
 
 	const menus = [
@@ -57,8 +59,12 @@
 "
 >
 	<div class="p-8 pb-4">
-		<h1 class="font-cute flex items-center gap-3 text-2xl font-bold tracking-wide text-[#F97316]">
-			<span class="animate-bounce text-3xl">🐱</span>
+		<h1 class="font-cute flex items-center gap-4 text-2xl font-bold tracking-wide text-[#F97316]">
+			<div class="relative flex h-12 w-12 items-center justify-center">
+				<div class="absolute top-1/2 left-1/2 h-24 w-24 -translate-x-1/2 -translate-y-1/2">
+					<Lottie path="/animations/logo.json" />
+				</div>
+			</div>
 			Kocheng Admin
 		</h1>
 		<p

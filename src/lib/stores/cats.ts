@@ -73,9 +73,10 @@ export async function addCat(cat: CatInsert): Promise<Cat | null> {
 	const supabase = createSupabaseClient();
 
 	try {
+		const insertData: CatInsert = cat;
 		const { data, error: insertError } = await supabase
 			.from('cats')
-			.insert(cat)
+			.insert(insertData)
 			.select()
 			.single();
 
@@ -99,9 +100,10 @@ export async function updateCat(id: string, updates: CatUpdate): Promise<Cat | n
 	const supabase = createSupabaseClient();
 
 	try {
+		const updateData: CatUpdate = { ...updates, updated_at: new Date().toISOString() };
 		const { data, error: updateError } = await supabase
 			.from('cats')
-			.update({ ...updates, updated_at: new Date().toISOString() })
+			.update(updateData)
 			.eq('id', id)
 			.select()
 			.single();
@@ -121,18 +123,16 @@ export async function updateCat(id: string, updates: CatUpdate): Promise<Cat | n
 	}
 }
 
-// Delete a cat (soft delete)
+// Delete a cat (soft delete) via API endpoint
 export async function deleteCat(id: string): Promise<boolean> {
-	const supabase = createSupabaseClient();
-
 	try {
-		const { error: deleteError } = await supabase
-			.from('cats')
-			.update({ is_active: false, updated_at: new Date().toISOString() })
-			.eq('id', id);
+		const response = await fetch(`/api/cats/${id}`, {
+			method: 'DELETE'
+		});
 
-		if (deleteError) {
-			throw deleteError;
+		if (!response.ok) {
+			const errorData = await response.json();
+			throw new Error(errorData.message || 'Failed to delete cat');
 		}
 
 		// Update local store

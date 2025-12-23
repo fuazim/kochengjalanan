@@ -38,7 +38,7 @@
 		}).addTo(map);
 
 		// Update markers when cats change
-		updateMarkers();
+		updateMarkers(cats);
 	});
 
 	onDestroy(() => {
@@ -47,23 +47,6 @@
 			map = null;
 		}
 	});
-
-	function updateMarkers() {
-		if (!map) return;
-
-		// Remove existing markers
-		markers.forEach((marker) => {
-			map?.removeLayer(marker);
-		});
-		markers = [];
-
-		// Add new markers
-		cats.forEach((cat) => {
-			const marker = createCatMarker(cat);
-			marker.addTo(map!);
-			markers.push(marker);
-		});
-	}
 
 	function getHealthStatusLabel(status: string): string {
 		const labels: Record<string, string> = {
@@ -211,10 +194,29 @@
 		return marker;
 	}
 
+	function updateMarkers(catList: Cat[]) {
+		if (!map) return;
+
+		// Remove existing markers
+		markers.forEach((marker) => {
+			map?.removeLayer(marker);
+		});
+		markers = [];
+
+		// Add new markers
+		catList.forEach((cat) => {
+			const marker = createCatMarker(cat);
+			marker.addTo(map!);
+			markers.push(marker);
+		});
+	}
+
 	// Update markers when cats prop changes
 	$effect(() => {
+		// Explicitly access cats to register dependency
+		const currentCats = cats;
 		if (map) {
-			updateMarkers();
+			updateMarkers(currentCats);
 		}
 	});
 </script>
