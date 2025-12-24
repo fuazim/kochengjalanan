@@ -40,7 +40,10 @@
 			<span class="relative z-10 flex items-center gap-2">
 				{#if filter.value === 'semua'}
 					<span class="icon-semua-kocheng">
-						<CatIconAll color={$activeFilter === filter.value ? '#ffffff' : filter.color} size={18} />
+						<CatIconAll
+							color={$activeFilter === filter.value ? '#ffffff' : filter.color}
+							size={18}
+						/>
 					</span>
 				{:else}
 					<CatIcon color={$activeFilter === filter.value ? '#ffffff' : filter.color} size={18} />
@@ -75,10 +78,16 @@
 					<span class="text-lg">
 						{#if filter.value === 'semua'}
 							<span class="icon-semua-kocheng-mobile">
-								<CatIconAll color={$activeFilter === filter.value ? '#ffffff' : filter.color} size={20} />
+								<CatIconAll
+									color={$activeFilter === filter.value ? '#ffffff' : filter.color}
+									size={20}
+								/>
 							</span>
 						{:else}
-							<CatIcon color={$activeFilter === filter.value ? '#ffffff' : filter.color} size={20} />
+							<CatIcon
+								color={$activeFilter === filter.value ? '#ffffff' : filter.color}
+								size={20}
+							/>
 						{/if}
 					</span>
 					<span>{filter.label}</span>
@@ -116,16 +125,6 @@
 </div>
 
 <style>
-	/* Hide scrollbar for Chrome, Safari and Opera */
-	.no-scrollbar::-webkit-scrollbar {
-		display: none;
-	}
-	/* Hide scrollbar for IE, Edge and Firefox */
-	.no-scrollbar {
-		-ms-overflow-style: none; /* IE and Edge */
-		scrollbar-width: none; /* Firefox */
-	}
-
 	@keyframes scale-up {
 		0% {
 			opacity: 0;

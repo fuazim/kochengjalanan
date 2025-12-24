@@ -12,6 +12,11 @@
 	let map: Map | null = null;
 	let marker: Marker | null = null;
 	let L: any;
+	let isMapReady = $state(false);
+
+	// Track previous coordinates to detect external changes
+	let prevLatitude = latitude;
+	let prevLongitude = longitude;
 
 	onMount(async () => {
 		const leafletModule = await import('leaflet');
@@ -49,9 +54,13 @@
 				const { lat, lng } = e.latlng;
 				latitude = lat;
 				longitude = lng;
+				prevLatitude = lat;
+				prevLongitude = lng;
 				updateMarker(lat, lng);
 			});
 		}
+
+		isMapReady = true;
 	});
 
 	function updateMarker(lat: number, lng: number) {
@@ -66,25 +75,32 @@
 					const pos = e.target.getLatLng();
 					latitude = pos.lat;
 					longitude = pos.lng;
+					prevLatitude = pos.lat;
+					prevLongitude = pos.lng;
 				});
 			}
 		}
 	}
 
 	function syncMapToLocation(lat: number, lng: number) {
-		if (!map) return;
-		const currentCenter = map.getCenter();
-		const distance = Math.hypot(currentCenter.lat - lat, currentCenter.lng - lng);
+		if (!map || !L) return;
 		updateMarker(lat, lng);
-		if (distance > 0.0001) {
-			map.flyTo([lat, lng], map.getZoom(), { animate: true, duration: 0.6 });
-		}
-		map.invalidateSize();
+		map.flyTo([lat, lng], 16, { animate: true, duration: 0.8 });
 	}
 
+	// React to external coordinate changes (e.g., from location search)
 	$effect(() => {
-		if (!map || !latitude || !longitude) return;
-		syncMapToLocation(latitude, longitude);
+		// Only run when map is ready and coordinates have actually changed
+		if (!isMapReady) return;
+
+		const hasCoords = latitude !== 0 && longitude !== 0;
+		const coordsChanged = latitude !== prevLatitude || longitude !== prevLongitude;
+
+		if (hasCoords && coordsChanged) {
+			prevLatitude = latitude;
+			prevLongitude = longitude;
+			syncMapToLocation(latitude, longitude);
+		}
 	});
 
 	function handleUseMyLocation() {
@@ -92,6 +108,8 @@
 			navigator.geolocation.getCurrentPosition((position) => {
 				latitude = position.coords.latitude;
 				longitude = position.coords.longitude;
+				prevLatitude = latitude;
+				prevLongitude = longitude;
 				updateMarker(latitude, longitude);
 				map?.setView([latitude, longitude], 15);
 			});

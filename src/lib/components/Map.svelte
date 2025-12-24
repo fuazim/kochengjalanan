@@ -1,35 +1,42 @@
 <script lang="ts">
-	import { onMount, onDestroy } from 'svelte';
+	import { onMount, onDestroy, mount } from 'svelte';
 	import type { Map, Marker } from 'leaflet';
 	import 'leaflet/dist/leaflet.css';
 	import type { Cat } from '$lib/types/supabase';
+	import CatPopup from './CatPopup.svelte';
 
 	interface Props {
 		cats: Cat[];
 		center?: [number, number];
 		zoom?: number;
+		userLocation?: [number, number] | null;
+		flyToTrigger?: number;
 	}
 
-	let { cats, center = [-6.2088, 106.8456], zoom = 13 }: Props = $props();
+	let {
+		cats,
+		center = [-6.2088, 106.8456],
+		zoom = 13,
+		userLocation = null,
+		flyToTrigger = 0
+	}: Props = $props();
 
 	let mapContainer: HTMLDivElement;
 	let map: Map | null = null;
 	let markers: Marker[] = [];
+	let userMarker: Marker | null = null;
 	let L: any;
 
 	onMount(async () => {
-		// Dynamically import Leaflet
 		const leafletModule = await import('leaflet');
 		L = leafletModule.default;
 
-		// Initialize map
 		map = L.map(mapContainer, {
 			center,
 			zoom,
 			zoomControl: true
 		});
 
-		// Add Minimal CartoDB tiles (Positron)
 		L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
 			attribution:
 				'&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
@@ -47,24 +54,6 @@
 			map = null;
 		}
 	});
-
-	function getHealthStatusLabel(status: string): string {
-		const labels: Record<string, string> = {
-			sehat: 'Sehat Walafiat',
-			sakit: 'Lagi Sakit',
-			kritis: 'Butuh Pertolongan'
-		};
-		return labels[status] || status;
-	}
-
-	function getHealthStatusColor(status: string): string {
-		const colors: Record<string, string> = {
-			sehat: 'bg-green-100 text-green-700 border-green-200',
-			sakit: 'bg-yellow-100 text-yellow-700 border-yellow-200',
-			kritis: 'bg-red-100 text-red-700 border-red-200'
-		};
-		return colors[status] || 'bg-gray-100 text-gray-700 border-gray-200';
-	}
 
 	function createCatMarker(cat: Cat): Marker {
 		// Determine color based on health status
@@ -116,76 +105,12 @@
 
 		const marker = L.marker([cat.latitude, cat.longitude], { icon: customIcon });
 
-		const locationLabel = cat.location_name || 'Lokasi tidak diketahui';
-		const shortLocation =
-			locationLabel.length > 60 ? `${locationLabel.slice(0, 57)}...` : locationLabel;
-		const locationTitle = locationLabel.replace(/"/g, '&quot;');
+		// Use the clean CatPopup component
+		const popupContainer = document.createElement('div');
+		mount(CatPopup, { target: popupContainer, props: { cat } });
 
-		// Create CUTE popup HTML content
-		const imageUrl = cat.thumbnail_url || cat.photos?.[0] || '';
-		const imageHtml = imageUrl
-			? `<div class="relative h-44 overflow-hidden rounded-t-3xl">
-				<img src="${imageUrl}" alt="${cat.name}" class="h-full w-full object-cover" />
-				<div class="absolute inset-x-0 bottom-3 px-3">
-					<span class="inline-flex max-w-full items-center truncate rounded-full border border-white/60 bg-white/85 px-2.5 py-1 text-[11px] font-semibold text-slate-700 shadow-sm backdrop-blur" title="${locationTitle}">
-						${shortLocation}
-					</span>
-				</div>
-			   </div>`
-			: `<div class="flex h-44 items-center justify-center rounded-t-3xl bg-slate-50 text-sm font-semibold text-slate-400">No photo</div>`;
-
-		const descriptionHtml = cat.description
-			? `<p class="text-sm text-slate-600 line-clamp-2 leading-relaxed">${cat.description}</p>`
-			: '';
-
-		const infoItems = [];
-		if (cat.gender && cat.gender !== 'unknown') {
-			infoItems.push(`<span class="rounded-full border border-slate-200 bg-slate-50 px-2.5 py-1 text-[11px] font-semibold text-slate-600">
-				${cat.gender === 'jantan' ? 'Jantan' : 'Betina'}
-			</span>`);
-		}
-		if (cat.age_estimate) {
-			const ageLabel =
-				cat.age_estimate === 'kitten'
-					? 'Kitten'
-					: cat.age_estimate === 'dewasa'
-						? 'Dewasa'
-						: 'Senior';
-			infoItems.push(
-				`<span class="rounded-full border border-slate-200 bg-slate-50 px-2.5 py-1 text-[11px] font-semibold text-slate-600">${ageLabel}</span>`
-			);
-		}
-
-		const infoHtml =
-			infoItems.length > 0
-				? `<div class="flex flex-wrap gap-2 mt-2">${infoItems.join('')}</div>`
-				: '';
-
-		const popupHtml = `
-			<div class="font-sans w-[280px] overflow-hidden rounded-3xl border border-slate-100 bg-white shadow-[0_6px_18px_rgba(15,23,42,0.08)]">
-				${imageHtml}
-				<div class="space-y-3 bg-white p-5">
-					<div class="space-y-2">
-						<h3 class="font-cute text-xl font-bold text-slate-800">${cat.name}</h3>
-						<span class="inline-flex items-center rounded-full border px-3 py-1 text-xs font-bold ${getHealthStatusColor(cat.health_status)}">
-							${getHealthStatusLabel(cat.health_status)}
-						</span>
-					</div>
-					${descriptionHtml}
-					${infoHtml}
-					<div class="pt-3">
-						<a href="/cats/${cat.id}" class="group flex w-full items-center justify-center gap-2 rounded-2xl bg-linear-to-r from-[#fcef04] to-[#dc419b] px-4 py-2.5 text-sm font-bold text-white transition-transform hover:-translate-y-0.5">
-							<span>Lihat Detailnya</span>
-							<span class="transition-transform group-hover:translate-x-1">-&gt;</span>
-						</a>
-					</div>
-				</div>
-			</div>
-		`;
-
-
-		marker.bindPopup(popupHtml, {
-			maxWidth: 300,
+		marker.bindPopup(popupContainer, {
+			maxWidth: 320,
 			className: 'cat-popup-container',
 			closeButton: false
 		});
@@ -212,10 +137,78 @@
 
 	// Update markers when cats prop changes
 	$effect(() => {
-		// Explicitly access cats to register dependency
 		const currentCats = cats;
 		if (map) {
 			updateMarkers(currentCats);
+		}
+	});
+
+	// React to flyToTrigger changes (for "Find Nearby" feature - forces flyTo every click)
+	$effect(() => {
+		// Log at the very start to see if effect runs
+		console.log('🔄 flyTo effect triggered:', { map: !!map, L: !!L, flyToTrigger, center, zoom });
+
+		if (!map || !L) return;
+
+		// Explicitly access all reactive variables to track them
+		const trigger = flyToTrigger;
+		const [lat, lng] = center;
+		const currentZoom = zoom;
+
+		if (trigger > 0) {
+			console.log('🗺️ Map flying to:', { lat, lng, zoom: currentZoom });
+			map.flyTo([lat, lng], currentZoom, { animate: true, duration: 1.5 });
+		}
+	});
+
+	// Update user location marker
+	$effect(() => {
+		// Log at the very start to see if effect runs
+		console.log('🔄 userMarker effect triggered:', { map: !!map, L: !!L, userLocation });
+		if (!map || !L) return;
+
+		// Explicitly access userLocation to track it
+		const currentUserLocation = userLocation;
+
+		// Remove existing user marker
+		if (userMarker) {
+			map.removeLayer(userMarker);
+			userMarker = null;
+		}
+
+		// Add new user marker if location exists
+		if (currentUserLocation) {
+			const [lat, lng] = currentUserLocation;
+
+			// Create custom user location icon with inline styles and ping effect like cat markers
+			const userIconHtml = `
+				<div style="position: relative; width: 28px; height: 28px;">
+					<div style="position: absolute; inset: 0; border-radius: 9999px; background-color: #3b82f6; opacity: 0.75; animation: ping 1.5s cubic-bezier(0, 0, 0.2, 1) infinite;"></div>
+					<div style="position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;">
+						<div style="width: 20px; height: 20px; border-radius: 9999px; border: 3px solid white; background-color: #3b82f6; box-shadow: 0 4px 12px rgba(59, 130, 246, 0.5); display: flex; align-items: center; justify-content: center;">
+							<div style="width: 6px; height: 6px; border-radius: 9999px; background-color: white;"></div>
+						</div>
+					</div>
+				</div>
+			`;
+
+			const userIcon = L.divIcon({
+				html: userIconHtml,
+				className: 'user-location-marker',
+				iconSize: [28, 28],
+				iconAnchor: [14, 14]
+			});
+
+			userMarker = L.marker([lat, lng], { icon: userIcon, zIndexOffset: 1000 }).addTo(map);
+			console.log('📍 User marker added at:', { lat, lng });
+			if (userMarker) {
+				userMarker.bindPopup(
+					'<div class="font-bold text-blue-600 text-sm px-2 py-1">📍 Lokasi Anda</div>',
+					{
+						className: 'user-popup'
+					}
+				);
+			}
 		}
 	});
 </script>
@@ -223,22 +216,6 @@
 <div bind:this={mapContainer} class="h-full w-full"></div>
 
 <style>
-	:global(.cat-popup-container .leaflet-popup-content-wrapper) {
-		padding: 0;
-		border-radius: 1rem;
-		background: transparent;
-		box-shadow: none;
-	}
-
-	:global(.cat-popup-container .leaflet-popup-content) {
-		margin: 0;
-		width: auto !important;
-	}
-
-	:global(.cat-popup-container .leaflet-popup-tip) {
-		background: white;
-	}
-
 	:global(.custom-cat-marker) {
 		background: transparent;
 		border: none;
@@ -291,5 +268,19 @@
 
 	:global(.leaflet-touch .leaflet-control-layers, .leaflet-touch .leaflet-bar) {
 		border: none !important;
+	}
+
+	/* User Location Marker */
+	:global(.user-location-marker) {
+		background: transparent !important;
+		border: none !important;
+	}
+
+	@keyframes ping {
+		75%,
+		100% {
+			transform: scale(2);
+			opacity: 0;
+		}
 	}
 </style>

@@ -84,25 +84,18 @@
 		}
 	}
 
-	$effect(() => {
-		if (typeof window === 'undefined') return;
-		if (skipNextLocationSearch) {
-			skipNextLocationSearch = false;
-			return;
-		}
+	function handleSearchLocation() {
 		const query = locationName.trim();
-		if (query.length < 3) {
-			clearLocationSearch();
-			locationSuggestions = [];
-			isLocationSearching = false;
+		if (query.length < 2) {
 			return;
 		}
-		clearLocationSearch();
 		locationSuggestions = [];
-		locationSearchTimeout = setTimeout(() => {
-			fetchLocationSuggestions(query);
-		}, 350);
-	});
+		fetchLocationSuggestions(query);
+	}
+
+	function closeSuggestions() {
+		locationSuggestions = [];
+	}
 
 	// Image upload
 	let imageFiles: FileList | null = $state(null);
@@ -205,9 +198,7 @@
 	</div>
 
 	{#if error}
-		<div
-			class="flex items-center gap-2 rounded-xl bg-red-50/80 p-4 text-sm text-red-600"
-		>
+		<div class="flex items-center gap-2 rounded-xl bg-red-50/80 p-4 text-sm text-red-600">
 			<span>😿</span>
 			{error}
 		</div>
@@ -215,7 +206,9 @@
 
 	<form onsubmit={handleSubmit} class="space-y-8">
 		<!-- Basic Info -->
-		<div class="rounded-3xl border border-slate-100 bg-white p-6 shadow-[0_4px_0_0_rgba(0,0,0,0.08)]">
+		<div
+			class="rounded-3xl border border-slate-100 bg-white p-6 shadow-[0_4px_0_0_rgba(0,0,0,0.08)]"
+		>
 			<h2 class="mb-4 text-lg font-bold text-slate-700">Informasi Dasar</h2>
 			<div class="grid gap-4 md:grid-cols-2">
 				<div>
@@ -287,7 +280,7 @@
 						type="checkbox"
 						id="neutered"
 						bind:checked={isNeutered}
-						class="h-5 w-5 rounded border-0 bg-white text-orange-500 focus:outline focus:outline-2 focus:outline-orange-200 focus:outline-offset-2"
+						class="h-5 w-5 rounded border-0 bg-white text-orange-500 focus:outline focus:outline-2 focus:outline-offset-2 focus:outline-orange-200"
 					/>
 					<label for="neutered" class="text-sm font-medium text-slate-600"
 						>Sudah Steril / Kastrasi</label
@@ -297,7 +290,9 @@
 		</div>
 
 		<!-- Health Status -->
-		<div class="rounded-3xl border border-slate-100 bg-white p-6 shadow-[0_4px_0_0_rgba(0,0,0,0.08)]">
+		<div
+			class="rounded-3xl border border-slate-100 bg-white p-6 shadow-[0_4px_0_0_rgba(0,0,0,0.08)]"
+		>
 			<h2 class="mb-4 text-lg font-bold text-slate-700">Status Kesehatan</h2>
 			<div class="grid gap-4 md:grid-cols-2">
 				<div>
@@ -330,40 +325,83 @@
 		</div>
 
 		<!-- Location -->
-		<div class="rounded-3xl border border-slate-100 bg-white p-6 shadow-[0_4px_0_0_rgba(0,0,0,0.08)]">
+		<div
+			class="rounded-3xl border border-slate-100 bg-white p-6 shadow-[0_4px_0_0_rgba(0,0,0,0.08)]"
+		>
 			<h2 class="mb-4 text-lg font-bold text-slate-700">Lokasi</h2>
 			<div class="grid gap-4 md:grid-cols-2">
 				<div class="relative">
 					<label for="locationName" class="mb-1 block text-sm font-medium text-slate-600"
 						>Nama Lokasi</label
 					>
-					<input
-						type="text"
-						id="locationName"
-						bind:value={locationName}
-						class="w-full rounded-2xl border-2 border-slate-100 bg-white px-4 py-3 text-slate-600 transition-all outline-none placeholder:text-slate-300 focus:border-orange-300 focus:ring-4 focus:ring-orange-100"
-						autocomplete="off"
-						placeholder="Taman Menteng"
-					/>
+					<div class="flex gap-2">
+						<input
+							type="text"
+							id="locationName"
+							bind:value={locationName}
+							class="flex-1 rounded-2xl border-2 border-slate-100 bg-white px-4 py-3 text-slate-600 transition-all outline-none placeholder:text-slate-300 focus:border-orange-300 focus:ring-4 focus:ring-orange-100"
+							autocomplete="off"
+							placeholder="Ketik nama lokasi..."
+							onkeydown={(e) => e.key === 'Enter' && (e.preventDefault(), handleSearchLocation())}
+						/>
+						<button
+							type="button"
+							onclick={handleSearchLocation}
+							disabled={isLocationSearching || locationName.trim().length < 2}
+							class="flex items-center gap-2 rounded-2xl bg-linear-to-r from-[#fcef04] to-[#dc419b] px-5 py-3 font-bold text-white transition-all hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-50"
+						>
+							{#if isLocationSearching}
+								<svg class="h-4 w-4 animate-spin" fill="none" viewBox="0 0 24 24">
+									<circle
+										class="opacity-25"
+										cx="12"
+										cy="12"
+										r="10"
+										stroke="currentColor"
+										stroke-width="4"
+									></circle>
+									<path
+										class="opacity-75"
+										fill="currentColor"
+										d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
+									></path>
+								</svg>
+							{:else}
+								<svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+									<path
+										stroke-linecap="round"
+										stroke-linejoin="round"
+										stroke-width="2"
+										d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+									/>
+								</svg>
+							{/if}
+							Cari
+						</button>
+					</div>
 					{#if locationSuggestions.length > 0}
 						<div
-							class="absolute z-20 mt-2 w-full overflow-hidden rounded-2xl border border-slate-100 bg-white shadow-[0_4px_0_0_rgba(0,0,0,0.08)]"
+							class="absolute z-20 mt-2 w-full overflow-hidden rounded-2xl border border-slate-100 bg-white shadow-lg"
 						>
+							<div
+								class="flex items-center justify-between border-b border-slate-100 bg-slate-50 px-4 py-2"
+							>
+								<span class="text-xs font-bold text-slate-400 uppercase">Pilih Lokasi</span>
+								<button
+									type="button"
+									onclick={closeSuggestions}
+									class="text-xs text-slate-400 hover:text-slate-600">✕ Tutup</button
+								>
+							</div>
 							{#each locationSuggestions as suggestion}
 								<button
 									type="button"
 									onclick={() => applyLocationSuggestion(suggestion)}
-									class="w-full px-4 py-2 text-left text-sm text-slate-600 transition-colors hover:bg-orange-50"
+									class="w-full border-b border-slate-50 px-4 py-3 text-left text-sm text-slate-600 transition-colors last:border-b-0 hover:bg-orange-50"
 								>
-									{suggestion.display_name}
+									<span class="line-clamp-2">{suggestion.display_name}</span>
 								</button>
 							{/each}
-						</div>
-					{:else if isLocationSearching}
-						<div
-							class="absolute z-20 mt-2 w-full rounded-2xl border border-slate-100 bg-white px-4 py-2 text-sm text-slate-400 shadow-[0_4px_0_0_rgba(0,0,0,0.08)]"
-						>
-							Mencari lokasi...
 						</div>
 					{/if}
 				</div>
@@ -386,7 +424,9 @@
 		</div>
 
 		<!-- Photos -->
-		<div class="rounded-3xl border border-slate-100 bg-white p-6 shadow-[0_4px_0_0_rgba(0,0,0,0.08)]">
+		<div
+			class="rounded-3xl border border-slate-100 bg-white p-6 shadow-[0_4px_0_0_rgba(0,0,0,0.08)]"
+		>
 			<h2 class="mb-4 text-lg font-bold text-slate-700">Foto Kocheng</h2>
 			<div>
 				<label
