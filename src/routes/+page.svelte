@@ -6,11 +6,7 @@
 	import { filteredCats, fetchCats, isLoading } from '$lib/stores/cats';
 
 	let cats = $derived($filteredCats);
-	let mapComponent: any;
-	let mapCenter = $state<[number, number]>([-6.2088, 106.8456]);
-	let mapZoom = $state(13);
-	let userLocation = $state<[number, number] | null>(null);
-	let flyToTrigger = $state(0);
+	let mapComponent: Map;
 	let isLocating = $state(false);
 	let locationError = $state('');
 
@@ -31,11 +27,13 @@
 			(position) => {
 				const { latitude, longitude } = position.coords;
 				console.log('🎯 Location obtained:', { latitude, longitude });
-				mapCenter = [latitude, longitude];
-				userLocation = [latitude, longitude];
-				mapZoom = 16;
-				flyToTrigger++;
-				console.log('📊 State updated:', { mapCenter, userLocation, mapZoom, flyToTrigger });
+
+				// Call Map component methods directly
+				if (mapComponent) {
+					mapComponent.setUserMarker(latitude, longitude);
+					mapComponent.flyToLocation(latitude, longitude, 16);
+				}
+
 				isLocating = false;
 			},
 			(error) => {
@@ -175,7 +173,7 @@
 
 		<!-- Map Container - Full Height -->
 		<div class="h-full w-full">
-			<Map {cats} center={mapCenter} zoom={mapZoom} {userLocation} {flyToTrigger} />
+			<Map bind:this={mapComponent} {cats} />
 		</div>
 	</main>
 </div>

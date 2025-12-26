@@ -12,11 +12,12 @@ CREATE TABLE admins (
 -- Enable RLS on admins table
 ALTER TABLE admins ENABLE ROW LEVEL SECURITY;
 
--- Only admins can see other admins
-CREATE POLICY "Admins can view admins"
+-- Policy: Authenticated users can view admins (admin list is not sensitive)
+-- This avoids infinite recursion
+CREATE POLICY "Authenticated users can view admins"
 ON admins FOR SELECT
 TO authenticated
-USING (auth.uid() IN (SELECT id FROM admins));
+USING (true);
 
 -- ============================================
 -- 2. Create cats table
@@ -46,7 +47,19 @@ CREATE TABLE cats (
 ALTER TABLE cats ENABLE ROW LEVEL SECURITY;
 
 -- ============================================
--- 3. RLS Policies for cats table
+-- 3. Helper function to check if user is admin (SECURITY DEFINER bypasses RLS)
+-- ============================================
+CREATE OR REPLACE FUNCTION is_admin()
+RETURNS BOOLEAN AS $$
+BEGIN
+    RETURN EXISTS (
+        SELECT 1 FROM admins WHERE id = auth.uid()
+    );
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
+
+-- ============================================
+-- 4. RLS Policies for cats table (using is_admin function)
 -- ============================================
 
 -- Policy: Anyone (public) can read active cats
@@ -58,32 +71,20 @@ USING (is_active = true);
 CREATE POLICY "Only admins can insert cats"
 ON cats FOR INSERT
 TO authenticated
-WITH CHECK (auth.uid() IN (SELECT id FROM admins));
+WITH CHECK (is_admin());
 
 -- Policy: Only admins can update cats
 CREATE POLICY "Only admins can update cats"
 ON cats FOR UPDATE
 TO authenticated
-USING (auth.uid() IN (SELECT id FROM admins))
-WITH CHECK (auth.uid() IN (SELECT id FROM admins));
+USING (is_admin())
+WITH CHECK (is_admin());
 
 -- Policy: Only admins can delete cats
 CREATE POLICY "Only admins can delete cats"
 ON cats FOR DELETE
 TO authenticated
-USING (auth.uid() IN (SELECT id FROM admins));
-
--- ============================================
--- 4. Helper function to check if user is admin
--- ============================================
-CREATE OR REPLACE FUNCTION is_admin()
-RETURNS BOOLEAN AS $$
-BEGIN
-    RETURN EXISTS (
-        SELECT 1 FROM admins WHERE id = auth.uid()
-    );
-END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
+USING (is_admin());
 
 -- ============================================
 -- 5. Auto-update updated_at trigger

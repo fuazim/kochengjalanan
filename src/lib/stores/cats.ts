@@ -146,16 +146,23 @@ export async function deleteCat(id: string): Promise<boolean> {
 	}
 }
 
-// Get a single cat by ID
-export async function getCatById(id: string): Promise<Cat | null> {
+// Get a single cat by slug or ID
+export async function getCatBySlug(slugOrId: string): Promise<Cat | null> {
 	const supabase = createSupabaseClient();
 
 	try {
-		const { data, error: fetchError } = await supabase
-			.from('cats')
-			.select('*')
-			.eq('id', id)
-			.single();
+		// Check if it's a UUID format
+		const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(slugOrId);
+
+		let query = supabase.from('cats').select('*');
+
+		if (isUuid) {
+			query = query.eq('id', slugOrId);
+		} else {
+			query = query.eq('slug', slugOrId);
+		}
+
+		const { data, error: fetchError } = await query.single();
 
 		if (fetchError) {
 			throw fetchError;
@@ -167,3 +174,9 @@ export async function getCatById(id: string): Promise<Cat | null> {
 		return null;
 	}
 }
+
+// Keep getCatById for backward compatibility
+export async function getCatById(id: string): Promise<Cat | null> {
+	return getCatBySlug(id);
+}
+

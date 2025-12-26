@@ -2,11 +2,21 @@
 	import { onMount } from 'svelte';
 	import { page } from '$app/state';
 	import { getCatById } from '$lib/stores/cats';
-	import type { Cat } from '$lib/types/supabase';
+	import { fetchActivityLogs } from '$lib/stores/activityLogs';
+	import type { Cat, ActivityLog } from '$lib/types/supabase';
+	import ActivityLogForm from '$lib/components/ActivityLogForm.svelte';
+	import ActivityLogList from '$lib/components/ActivityLogList.svelte';
+	import Modal from '$lib/components/Modal.svelte';
+	import { Scissors, ClipboardList } from 'lucide-svelte';
 
 	let cat = $state<Cat | null>(null);
 	let isLoading = $state(true);
 	let errorMessage = $state('');
+
+	// Activity logs state
+	let activityLogs = $state<ActivityLog[]>([]);
+	let isLoadingLogs = $state(true);
+	let isLogModalOpen = $state(false);
 
 	function getStatusLabel(status: Cat['health_status']): string {
 		const labels: Record<Cat['health_status'], string> = {
@@ -43,6 +53,14 @@
 		return value && value.trim().length > 0 ? value : '-';
 	}
 
+	async function loadActivityLogs() {
+		// Use cat.id (UUID) instead of page.params.id (which might be slug)
+		if (!cat) return;
+		isLoadingLogs = true;
+		activityLogs = await fetchActivityLogs(cat.id);
+		isLoadingLogs = false;
+	}
+
 	onMount(async () => {
 		const id = page.params.id;
 		if (!id) {
@@ -56,6 +74,8 @@
 			errorMessage = 'Kocheng tidak ditemukan.';
 		} else {
 			cat = data;
+			// Load activity logs after cat is loaded
+			await loadActivityLogs();
 		}
 		isLoading = false;
 	});
@@ -223,7 +243,8 @@
 										cat.is_neutered ? 'bg-blue-50 text-blue-600' : 'bg-slate-100 text-slate-600'
 									}`}
 								>
-									{cat.is_neutered ? '✂️ Sudah Steril' : 'Belum Steril'}
+									{#if cat.is_neutered}<Scissors class="h-3 w-3" />{/if}
+									{cat.is_neutered ? 'Sudah Steril' : 'Belum Steril'}
 								</span>
 							</div>
 						</div>
@@ -311,7 +332,54 @@
 						</div>
 					</div>
 				</div>
+
+				<!-- Activity Log Section -->
+				<!-- Activity Log Section -->
+				<div class="mt-8 lg:col-span-12">
+					<div class="rounded-[2.5rem] bg-white p-6 ring-1 ring-slate-100 sm:p-8">
+						<div class="mb-6 flex flex-wrap items-center justify-between gap-4">
+							<div class="flex items-center gap-3">
+								<div
+									class="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-[#fcef04] to-[#dc419b]"
+								>
+									<ClipboardList class="h-5 w-5 text-white" />
+								</div>
+								<div>
+									<h2 class="text-xl font-bold text-slate-800">Log Aktivitas</h2>
+									<p class="text-xs text-slate-400">Riwayat perawatan {cat.name}</p>
+								</div>
+							</div>
+
+							<button
+								onclick={() => (isLogModalOpen = true)}
+								class="rounded-xl bg-gradient-to-r from-[#fcef04] to-[#dc419b] px-5 py-2.5 text-sm font-bold text-white transition-all hover:scale-105 active:scale-95"
+							>
+								+ Catat Aktivitas
+							</button>
+						</div>
+
+						<!-- List Section (Full Width) -->
+						<div>
+							<ActivityLogList logs={activityLogs} isLoading={isLoadingLogs} />
+						</div>
+					</div>
+				</div>
 			</div>
+
+			<!-- Modal Form Input -->
+			<Modal
+				isOpen={isLogModalOpen}
+				title="Catat Aktivitas Baru"
+				onClose={() => (isLogModalOpen = false)}
+			>
+				<ActivityLogForm
+					catId={cat.id}
+					onLogAdded={() => {
+						loadActivityLogs();
+						isLogModalOpen = false;
+					}}
+				/>
+			</Modal>
 		{/if}
 	</div>
 </div>

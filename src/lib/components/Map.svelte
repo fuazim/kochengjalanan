@@ -27,6 +27,70 @@
 	let userMarker: Marker | null = null;
 	let L: any;
 
+	// Exported function to fly to a specific location
+	export function flyToLocation(lat: number, lng: number, zoomLevel: number = 16) {
+		if (map && L) {
+			console.log('🚀 flyToLocation called:', { lat, lng, zoomLevel });
+			map.flyTo([lat, lng], zoomLevel, { animate: true, duration: 1.5 });
+		}
+	}
+
+	// Exported function to set user marker
+	export function setUserMarker(lat: number, lng: number) {
+		if (!map || !L) return;
+		console.log('📍 setUserMarker called:', { lat, lng });
+
+		// Remove existing marker
+		if (userMarker) {
+			map.removeLayer(userMarker);
+			userMarker = null;
+		}
+
+		// Create user marker with same style as cat marker
+		const userIconHtml = `
+			<div class="relative group">
+				<div class="absolute -inset-1 rounded-full opacity-75 animate-ping" style="background-color: #3b82f6"></div>
+				<div class="relative transform transition-transform hover:scale-110 duration-200">
+					<div style="
+						background-color: #3b82f6;
+						border: 3px solid white;
+						border-radius: 50%;
+						width: 48px;
+						height: 48px;
+						display: flex;
+						align-items: center;
+						justify-content: center;
+						font-size: 24px;
+						box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
+						cursor: pointer;
+						position: relative;
+						z-index: 10;
+					" class="user-marker-icon">
+						<span class="animate-bounce-slow">🧑</span>
+					</div>
+					<div class="absolute -bottom-1 left-1/2 -translate-x-1/2 w-3 h-3 bg-white rotate-45 border-r border-b border-gray-100 transform translate-y-[-50%] z-0"></div>
+				</div>
+			</div>
+		`;
+
+		const userIcon = L.divIcon({
+			html: userIconHtml,
+			className: 'custom-user-marker',
+			iconSize: [48, 48],
+			iconAnchor: [24, 48],
+			popupAnchor: [0, -50]
+		});
+
+		userMarker = L.marker([lat, lng], { icon: userIcon, zIndexOffset: 1000 }).addTo(map);
+		if (userMarker) {
+			userMarker.bindPopup(
+				'<div class="font-bold text-blue-600 text-sm px-2 py-1">📍 Lokasi Anda</div>',
+				{ className: 'user-popup' }
+			);
+			userMarker.openPopup();
+		}
+	}
+
 	onMount(async () => {
 		const leafletModule = await import('leaflet');
 		L = leafletModule.default;
@@ -34,7 +98,8 @@
 		map = L.map(mapContainer, {
 			center,
 			zoom,
-			zoomControl: true
+			zoomControl: true,
+			attributionControl: false
 		});
 
 		L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
@@ -143,34 +208,31 @@
 		}
 	});
 
-	// React to flyToTrigger changes (for "Find Nearby" feature - forces flyTo every click)
+	// React to flyToTrigger changes (for "Find Nearby" feature)
 	$effect(() => {
-		// Log at the very start to see if effect runs
-		console.log('🔄 flyTo effect triggered:', { map: !!map, L: !!L, flyToTrigger, center, zoom });
-
 		if (!map || !L) return;
 
-		// Explicitly access all reactive variables to track them
+		// Track dependencies (console.log required for Svelte 5 reactivity)
 		const trigger = flyToTrigger;
-		const [lat, lng] = center;
-		const currentZoom = zoom;
+		const targetCenter = center;
+		const targetZoom = zoom;
+		console.log('🗺️ Map effect:', { trigger, targetCenter, targetZoom });
 
-		if (trigger > 0) {
-			console.log('🗺️ Map flying to:', { lat, lng, zoom: currentZoom });
-			map.flyTo([lat, lng], currentZoom, { animate: true, duration: 1.5 });
+		if (trigger > 0 && targetCenter) {
+			const [lat, lng] = targetCenter;
+			map.flyTo([lat, lng], targetZoom, { animate: true, duration: 1.5 });
 		}
 	});
 
-	// Update user location marker
+	// Update user location marker and fly to it
 	$effect(() => {
-		// Log at the very start to see if effect runs
-		console.log('🔄 userMarker effect triggered:', { map: !!map, L: !!L, userLocation });
 		if (!map || !L) return;
 
-		// Explicitly access userLocation to track it
+		// Track userLocation (console.log required for Svelte 5 reactivity)
 		const currentUserLocation = userLocation;
+		console.log('📍 UserLocation effect:', currentUserLocation);
 
-		// Remove existing user marker
+		// Remove existing user marker first
 		if (userMarker) {
 			map.removeLayer(userMarker);
 			userMarker = null;
@@ -180,13 +242,13 @@
 		if (currentUserLocation) {
 			const [lat, lng] = currentUserLocation;
 
-			// Create custom user location icon with inline styles and ping effect like cat markers
+			// Create custom user location icon with pulse animation
 			const userIconHtml = `
-				<div style="position: relative; width: 28px; height: 28px;">
-					<div style="position: absolute; inset: 0; border-radius: 9999px; background-color: #3b82f6; opacity: 0.75; animation: ping 1.5s cubic-bezier(0, 0, 0.2, 1) infinite;"></div>
+				<div style="position: relative; width: 32px; height: 32px;">
+					<div style="position: absolute; inset: -4px; border-radius: 9999px; background-color: #3b82f6; opacity: 0.4; animation: ping 1.5s cubic-bezier(0, 0, 0.2, 1) infinite;"></div>
 					<div style="position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;">
-						<div style="width: 20px; height: 20px; border-radius: 9999px; border: 3px solid white; background-color: #3b82f6; box-shadow: 0 4px 12px rgba(59, 130, 246, 0.5); display: flex; align-items: center; justify-content: center;">
-							<div style="width: 6px; height: 6px; border-radius: 9999px; background-color: white;"></div>
+						<div style="width: 24px; height: 24px; border-radius: 9999px; border: 3px solid white; background-color: #3b82f6; box-shadow: 0 4px 12px rgba(59, 130, 246, 0.5); display: flex; align-items: center; justify-content: center;">
+							<div style="width: 8px; height: 8px; border-radius: 9999px; background-color: white;"></div>
 						</div>
 					</div>
 				</div>
@@ -195,25 +257,34 @@
 			const userIcon = L.divIcon({
 				html: userIconHtml,
 				className: 'user-location-marker',
-				iconSize: [28, 28],
-				iconAnchor: [14, 14]
+				iconSize: [32, 32],
+				iconAnchor: [16, 16]
 			});
 
 			userMarker = L.marker([lat, lng], { icon: userIcon, zIndexOffset: 1000 }).addTo(map);
-			console.log('📍 User marker added at:', { lat, lng });
+
 			if (userMarker) {
 				userMarker.bindPopup(
 					'<div class="font-bold text-blue-600 text-sm px-2 py-1">📍 Lokasi Anda</div>',
-					{
-						className: 'user-popup'
-					}
+					{ className: 'user-popup' }
 				);
+				// Auto open popup to show user their location
+				userMarker.openPopup();
 			}
 		}
 	});
 </script>
 
-<div bind:this={mapContainer} class="h-full w-full"></div>
+<div class="relative h-full w-full">
+	<div bind:this={mapContainer} class="h-full w-full"></div>
+
+	<!-- Custom Cute Attribution -->
+	<div
+		class="absolute right-2 bottom-2 z-[400] rounded-full bg-white/80 px-3 py-1 text-[10px] font-bold text-slate-500 shadow-sm backdrop-blur-sm transition-all hover:bg-white hover:text-[#dc419b]"
+	>
+		🗺️ Maps by <a href="https://openstreetmap.org" target="_blank" class="hover:underline">OSM</a> & Carto
+	</div>
+</div>
 
 <style>
 	:global(.custom-cat-marker) {
@@ -271,7 +342,8 @@
 	}
 
 	/* User Location Marker */
-	:global(.user-location-marker) {
+	:global(.user-location-marker),
+	:global(.custom-user-marker) {
 		background: transparent !important;
 		border: none !important;
 	}

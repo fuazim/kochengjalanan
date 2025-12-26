@@ -1,8 +1,9 @@
 <script lang="ts">
-	import type { Cat } from '$lib/types/supabase';
+	import type { Cat as CatType } from '$lib/types/supabase';
+	import { Cat } from 'lucide-svelte';
 
 	interface Props {
-		cat: Cat;
+		cat: CatType;
 	}
 
 	let { cat }: Props = $props();
@@ -51,7 +52,9 @@
 				class="h-full w-full object-cover transition-transform duration-700 hover:scale-110"
 			/>
 		{:else}
-			<div class="flex h-full w-full items-center justify-center text-4xl">🐱</div>
+			<div class="flex h-full w-full items-center justify-center text-slate-300">
+				<Cat class="h-16 w-16" />
+			</div>
 		{/if}
 
 		<!-- Status Badge -->
@@ -121,7 +124,7 @@
 
 		<!-- Action Button (Gradient Style) -->
 		<a
-			href="/cats/{cat.id}"
+			href="/cats/{cat.slug || cat.id}"
 			class="group flex w-full items-center justify-center gap-2 rounded-xl bg-linear-to-r from-[#fcef04] to-[#dc419b] py-2.5 text-xs font-bold !text-white shadow-md transition-all hover:-translate-y-0.5 hover:shadow-lg"
 		>
 			Lihat Detail

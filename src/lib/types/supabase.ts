@@ -13,6 +13,7 @@ export interface Database {
                 Row: {
                     id: string;
                     name: string;
+                    slug: string | null;
                     description: string | null;
                     latitude: number;
                     longitude: number;
@@ -71,6 +72,40 @@ export interface Database {
                 };
                 Relationships: [];
             };
+            cat_activity_logs: {
+                Row: {
+                    id: string;
+                    cat_id: string;
+                    activity_type: 'feeding' | 'health_check' | 'grooming' | 'other';
+                    notes: string | null;
+                    user_name: string;
+                    created_at: string;
+                };
+                Insert: {
+                    id?: string;
+                    cat_id: string;
+                    activity_type: 'feeding' | 'health_check' | 'grooming' | 'other';
+                    notes?: string | null;
+                    user_name?: string;
+                    created_at?: string;
+                };
+                Update: {
+                    id?: string;
+                    cat_id?: string;
+                    activity_type?: 'feeding' | 'health_check' | 'grooming' | 'other';
+                    notes?: string | null;
+                    user_name?: string;
+                    created_at?: string;
+                };
+                Relationships: [
+                    {
+                        foreignKeyName: 'cat_activity_logs_cat_id_fkey';
+                        columns: ['cat_id'];
+                        referencedRelation: 'cats';
+                        referencedColumns: ['id'];
+                    }
+                ];
+            };
         };
         Views: {
             [_ in never]: never;
@@ -90,3 +125,7 @@ export interface Database {
 export type Cat = Database['public']['Tables']['cats']['Row'];
 export type CatInsert = Database['public']['Tables']['cats']['Insert'];
 export type CatUpdate = Database['public']['Tables']['cats']['Update'];
+
+export type ActivityLog = Database['public']['Tables']['cat_activity_logs']['Row'];
+export type ActivityLogInsert = Database['public']['Tables']['cat_activity_logs']['Insert'];
+export type ActivityLogUpdate = Database['public']['Tables']['cat_activity_logs']['Update'];

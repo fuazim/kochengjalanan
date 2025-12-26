@@ -2,10 +2,21 @@
 	import { onMount } from 'svelte';
 	import { cats as catsStore, fetchCats, isLoading } from '$lib/stores/cats';
 	import { auth } from '$lib/stores/auth';
+	import {
+		fetchAllActivityLogs,
+		getActivityTypeLabel,
+		formatRelativeTime,
+		type ActivityLogWithCat
+	} from '$lib/stores/activityLogs';
 	import CatIcon from '$lib/components/CatIcon.svelte';
 	import CatIconAll from '$lib/components/CatIconAll.svelte';
+	import { Utensils, Stethoscope, Scissors, FileText, Activity, Cat } from 'lucide-svelte';
 
 	let cats = $derived($catsStore);
+
+	// Activity logs state
+	let activityLogs = $state<ActivityLogWithCat[]>([]);
+	let isLoadingLogs = $state(true);
 
 	// Statistik dari data real
 	let stats = $derived({
@@ -22,8 +33,19 @@
 			.slice(0, 5)
 	);
 
-	onMount(() => {
+	// Icon map for activity types
+	const iconMap = {
+		feeding: Utensils,
+		health_check: Stethoscope,
+		grooming: Scissors,
+		other: FileText
+	};
+
+	onMount(async () => {
 		fetchCats();
+		// Load activity logs
+		activityLogs = await fetchAllActivityLogs(8);
+		isLoadingLogs = false;
 	});
 </script>
 
@@ -33,9 +55,7 @@
 
 <div class="space-y-8 pb-10">
 	<!-- Welcome Section -->
-	<div
-		class="relative overflow-hidden rounded-4xl bg-linear-to-r from-[#fcef04] to-[#dc419b] p-10"
-	>
+	<div class="relative overflow-hidden rounded-4xl bg-linear-to-r from-[#fcef04] to-[#dc419b] p-10">
 		<div class="relative z-10">
 			<div>
 				<h1 class="font-cute text-4xl font-bold text-white">
@@ -61,7 +81,11 @@
 					<CatIconAll color="#ffffff" size={32} />
 				</div>
 				<div>
-					<p class="text-xs font-bold tracking-wider bg-linear-to-r from-[#fcef04] to-[#dc419b] bg-clip-text text-transparent uppercase">Total Kocheng</p>
+					<p
+						class="bg-linear-to-r from-[#fcef04] to-[#dc419b] bg-clip-text text-xs font-bold tracking-wider text-transparent uppercase"
+					>
+						Total Kocheng
+					</p>
 					<p class="font-cute text-4xl font-bold text-slate-800">{stats.total}</p>
 				</div>
 			</div>
@@ -119,140 +143,164 @@
 		</div>
 	</div>
 
-	<!-- Recent Cats -->
-	<div
-		class="overflow-hidden rounded-4xl bg-white"
-	>
-		<div class="flex items-center justify-between p-8">
-			<h2 class="font-cute flex items-center gap-3 text-2xl font-bold text-slate-800">
-				<svg class="h-8 w-8 bg-linear-to-r from-[#fcef04] to-[#dc419b] bg-clip-text text-transparent" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-					<path
-						stroke-linecap="round"
-						stroke-linejoin="round"
-						stroke-width="2"
-						d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
-					/>
-				</svg>
-				Kocheng Terbaru
-			</h2>
-			<a
-				href="/admin/cats"
-				class="group flex items-center gap-2 rounded-2xl bg-white px-5 py-2.5 text-sm font-bold bg-linear-to-r from-[#fcef04] to-[#dc419b] bg-clip-text text-transparent transition-all hover:pl-6"
-			>
-				Lihat Semua <span class="transition-transform group-hover:translate-x-1">→</span>
-			</a>
+	<!-- Two Column Layout: Recent Cats & Activity Logs -->
+	<div class="grid grid-cols-1 gap-6 lg:grid-cols-2">
+		<!-- Recent Cats -->
+		<div class="overflow-hidden rounded-4xl bg-white">
+			<div class="flex items-center justify-between p-6">
+				<h2 class="font-cute flex items-center gap-3 text-xl font-bold text-slate-800">
+					<div
+						class="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-[#fcef04] to-[#dc419b]"
+					>
+						<Cat class="h-5 w-5 text-white" />
+					</div>
+					Kocheng Terbaru
+				</h2>
+				<a
+					href="/admin/cats"
+					class="text-sm font-bold text-slate-400 transition-colors hover:text-[#dc419b]"
+				>
+					Lihat Semua →
+				</a>
+			</div>
+			<div class="space-y-2 px-6 pb-6">
+				{#each recentCats.slice(0, 5) as cat}
+					<a
+						href="/cats/{cat.slug || cat.id}"
+						class="group flex items-center gap-4 rounded-2xl p-3 transition-all hover:bg-slate-50"
+					>
+						<div class="relative h-12 w-12 shrink-0">
+							{#if cat.thumbnail_url}
+								<img
+									src={cat.thumbnail_url}
+									alt={cat.name}
+									class="h-full w-full rounded-xl object-cover transition-transform group-hover:scale-105"
+								/>
+							{:else}
+								<div class="flex h-full w-full items-center justify-center rounded-xl bg-pink-50">
+									<Cat class="h-6 w-6 text-[#dc419b]" />
+								</div>
+							{/if}
+							<div
+								class="absolute -right-1 -bottom-1 h-3 w-3 rounded-full border-2 border-white {cat.health_status ===
+								'sehat'
+									? 'bg-green-400'
+									: cat.health_status === 'sakit'
+										? 'bg-yellow-400'
+										: 'bg-red-400'}"
+							></div>
+						</div>
+						<div class="min-w-0 flex-1">
+							<p
+								class="truncate font-bold text-slate-800 transition-colors group-hover:text-[#dc419b]"
+							>
+								{cat.name}
+							</p>
+							<p class="truncate text-xs text-slate-400">
+								{cat.location_name || 'Lokasi tidak diketahui'}
+							</p>
+						</div>
+						<span class="text-xs text-slate-300">
+							{new Date(cat.created_at).toLocaleDateString('id-ID', {
+								day: 'numeric',
+								month: 'short'
+							})}
+						</span>
+					</a>
+				{/each}
+				{#if recentCats.length === 0}
+					<div class="py-8 text-center text-slate-400">
+						<Cat class="mx-auto mb-2 h-12 w-12 opacity-50" />
+						<p class="text-sm">Belum ada kocheng terdaftar</p>
+					</div>
+				{/if}
+			</div>
 		</div>
-		<div class="overflow-x-auto p-2">
-			<table class="w-full text-left text-sm text-slate-600">
-				<thead class="text-xs font-bold tracking-wider text-slate-400 uppercase">
-					<tr>
-						<th class="px-8 py-4 pl-10">Nama Kocheng</th>
-						<th class="px-6 py-4">Lokasi</th>
-						<th class="px-6 py-4">Status</th>
-						<th class="px-6 py-4 pr-10 text-right">Waktu</th>
-					</tr>
-				</thead>
-				<tbody class="divide-y divide-slate-50">
-					{#each recentCats as cat}
-						<tr class="group rounded-2xl transition-colors hover:bg-pink-50/50">
-							<td class="px-8 py-4 pl-10">
-								<div class="flex items-center gap-4">
-									<div
-										class="relative h-12 w-12 shrink-0 transition-transform duration-300 group-hover:scale-110"
-									>
-										{#if cat.thumbnail_url}
-											<img
-												src={cat.thumbnail_url}
-												alt={cat.name}
-												class="h-full w-full rounded-2xl object-cover"
-											/>
-										{:else}
-											<div
-												class="flex h-full w-full items-center justify-center rounded-2xl bg-pink-50"
-											>
-												<svg class="h-8 w-8" viewBox="0 0 24 24" fill="#dc419b">
-													<path
-														d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8 0-.29.02-.58.05-.86 2.36-1.05 4.23-2.98 5.21-5.37C11.07 8.33 14.05 10 17.42 10c.78 0 1.53-.09 2.25-.26.21 1.35.33 2.74.33 4.16 0 4.41-3.59 8-8 8z"
-														opacity=".3"
-													/>
-													<path
-														d="M9 11.75c-.69 0-1.25.56-1.25 1.25s.56 1.25 1.25 1.25 1.25-.56 1.25-1.25-.56-1.25-1.25-1.25zm6 0c-.69 0-1.25.56-1.25 1.25s.56 1.25 1.25 1.25 1.25-.56 1.25-1.25-.56-1.25-1.25-1.25zM12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8 0-.29.02-.58.05-.86 2.36-1.05 4.23-2.98 5.21-5.37C11.07 8.33 14.05 10 17.42 10c.78 0 1.53-.09 2.25-.26.21 1.35.33 2.74.33 4.16 0 4.41-3.59 8-8 8z"
-													/>
-												</svg>
-											</div>
-										{/if}
-										<div
-											class="absolute -right-1 -bottom-1 h-4 w-4 rounded-full bg-green-400"
-										></div>
-									</div>
-									<div>
-										<p
-											class="font-cute text-lg font-bold text-slate-800 transition-colors group-hover:bg-linear-to-r group-hover:from-[#fcef04] group-hover:to-[#dc419b] group-hover:bg-clip-text group-hover:text-transparent"
-										>
-											{cat.name}
-										</p>
-										{#if cat.gender}
-											<p class="text-xs font-medium text-slate-400 capitalize">{cat.gender}</p>
-										{/if}
-									</div>
-								</div>
-							</td>
-							<td class="px-6 py-4">
+
+		<!-- Activity Logs -->
+		<div class="overflow-hidden rounded-4xl bg-white">
+			<div class="flex items-center justify-between p-6">
+				<h2 class="font-cute flex items-center gap-3 text-xl font-bold text-slate-800">
+					<div
+						class="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-blue-400 to-purple-500"
+					>
+						<Activity class="h-5 w-5 text-white" />
+					</div>
+					Aktivitas Terbaru
+				</h2>
+				<span class="rounded-full bg-blue-50 px-3 py-1 text-xs font-bold text-blue-600">
+					{activityLogs.length} log
+				</span>
+			</div>
+			<div class="max-h-[400px] space-y-2 overflow-y-auto px-6 pb-6">
+				{#if isLoadingLogs}
+					<div class="flex items-center justify-center py-8">
+						<div
+							class="h-8 w-8 animate-spin rounded-full border-4 border-slate-200 border-t-[#dc419b]"
+						></div>
+					</div>
+				{:else if activityLogs.length === 0}
+					<div class="py-8 text-center text-slate-400">
+						<Activity class="mx-auto mb-2 h-12 w-12 opacity-50" />
+						<p class="text-sm">Belum ada aktivitas tercatat</p>
+					</div>
+				{:else}
+					{#each activityLogs as log (log.id)}
+						{@const Icon = iconMap[log.activity_type] || FileText}
+						<a
+							href="/cats/{log.cat?.slug || log.cat_id}"
+							class="group flex items-start gap-3 rounded-2xl p-3 transition-all hover:bg-slate-50"
+						>
+							<!-- Activity Icon -->
+							<div
+								class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-slate-100 text-slate-500 transition-colors group-hover:bg-[#dc419b]/10 group-hover:text-[#dc419b]"
+							>
+								<Icon class="h-5 w-5" />
+							</div>
+
+							<!-- Content -->
+							<div class="min-w-0 flex-1">
 								<div class="flex items-center gap-2">
-									<svg
-										class="h-4 w-4 text-slate-400"
-										fill="none"
-										viewBox="0 0 24 24"
-										stroke="currentColor"
+									<span class="text-sm font-bold text-slate-700"
+										>{getActivityTypeLabel(log.activity_type)}</span
 									>
-										<path
-											stroke-linecap="round"
-											stroke-linejoin="round"
-											stroke-width="2"
-											d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"
-										/>
-										<path
-											stroke-linecap="round"
-											stroke-linejoin="round"
-											stroke-width="2"
-											d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
-										/>
-									</svg>
-									<span class="font-medium text-slate-700">{cat.location_name || '-'}</span>
+									<span class="text-[10px] text-slate-300">•</span>
+									<span class="text-xs text-slate-400">{formatRelativeTime(log.created_at)}</span>
 								</div>
-							</td>
-							<td class="px-6 py-4">
-								<span
-									class="{cat.health_status === 'sehat'
-										? 'bg-green-100 text-green-700'
-										: cat.health_status === 'sakit'
-											? 'bg-yellow-100 text-yellow-700'
-											: 'bg-red-100 text-red-700'} inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-bold capitalize"
-								>
-									<span
-										class="h-1.5 w-1.5 rounded-full {cat.health_status === 'sehat'
-											? 'bg-green-500'
-											: cat.health_status === 'sakit'
-												? 'bg-yellow-500'
-												: 'bg-red-500'}"
-									></span>
-									{cat.health_status}
-								</span>
-							</td>
-							<td class="px-6 py-4 pr-10 text-right text-xs font-medium text-slate-400">
-								{new Date(cat.created_at).toLocaleDateString('id-ID', {
-									day: 'numeric',
-									month: 'long',
-									year: 'numeric'
-								})}
-							</td>
-						</tr>
+								<p class="mt-0.5 text-xs text-slate-500">
+									<span class="font-medium text-[#dc419b]">{log.user_name}</span>
+									{#if log.cat}
+										→ <span class="font-medium text-slate-600">{log.cat.name}</span>
+									{/if}
+								</p>
+								{#if log.notes}
+									<p class="mt-1 line-clamp-1 text-xs text-slate-400">{log.notes}</p>
+								{/if}
+							</div>
+
+							<!-- Cat Thumbnail -->
+							{#if log.cat?.thumbnail_url}
+								<div class="h-10 w-10 shrink-0 overflow-hidden rounded-lg">
+									<img
+										src={log.cat.thumbnail_url}
+										alt={log.cat.name}
+										class="h-full w-full object-cover"
+									/>
+								</div>
+							{/if}
+						</a>
 					{/each}
-				</tbody>
-			</table>
+				{/if}
+			</div>
 		</div>
 	</div>
 </div>
 
 <style>
+	.line-clamp-1 {
+		display: -webkit-box;
+		-webkit-line-clamp: 1;
+		-webkit-box-orient: vertical;
+		overflow: hidden;
+	}
 </style>

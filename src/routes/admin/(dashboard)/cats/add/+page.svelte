@@ -4,6 +4,7 @@
 	import { addCat } from '$lib/stores/cats';
 	import { uploadCatImages } from '$lib/utils/storage';
 	import type { CatInsert } from '$lib/types/supabase';
+	import { Camera, AlertCircle, Search, X, Loader2 } from 'lucide-svelte';
 
 	// Form state
 	let name = $state('');
@@ -199,7 +200,7 @@
 
 	{#if error}
 		<div class="flex items-center gap-2 rounded-xl bg-red-50/80 p-4 text-sm text-red-600">
-			<span>😿</span>
+			<AlertCircle class="h-5 w-5" />
 			{error}
 		</div>
 	{/if}
@@ -280,7 +281,7 @@
 						type="checkbox"
 						id="neutered"
 						bind:checked={isNeutered}
-						class="h-5 w-5 rounded border-0 bg-white text-orange-500 focus:outline focus:outline-2 focus:outline-offset-2 focus:outline-orange-200"
+						class="h-5 w-5 cursor-pointer rounded border-2 border-slate-300 accent-orange-500"
 					/>
 					<label for="neutered" class="text-sm font-medium text-slate-600"
 						>Sudah Steril / Kastrasi</label
@@ -351,30 +352,9 @@
 							class="flex items-center gap-2 rounded-2xl bg-linear-to-r from-[#fcef04] to-[#dc419b] px-5 py-3 font-bold text-white transition-all hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-50"
 						>
 							{#if isLocationSearching}
-								<svg class="h-4 w-4 animate-spin" fill="none" viewBox="0 0 24 24">
-									<circle
-										class="opacity-25"
-										cx="12"
-										cy="12"
-										r="10"
-										stroke="currentColor"
-										stroke-width="4"
-									></circle>
-									<path
-										class="opacity-75"
-										fill="currentColor"
-										d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
-									></path>
-								</svg>
+								<Loader2 class="h-4 w-4 animate-spin" />
 							{:else}
-								<svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-									<path
-										stroke-linecap="round"
-										stroke-linejoin="round"
-										stroke-width="2"
-										d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-									/>
-								</svg>
+								<Search class="h-4 w-4" />
 							{/if}
 							Cari
 						</button>
@@ -390,8 +370,10 @@
 								<button
 									type="button"
 									onclick={closeSuggestions}
-									class="text-xs text-slate-400 hover:text-slate-600">✕ Tutup</button
+									class="flex items-center gap-1 text-xs text-slate-400 hover:text-slate-600"
 								>
+									<X class="h-3 w-3" /> Tutup
+								</button>
 							</div>
 							{#each locationSuggestions as suggestion}
 								<button
@@ -433,7 +415,7 @@
 					for="photos"
 					class="flex cursor-pointer flex-col items-center justify-center rounded-xl bg-white/80 p-8 transition-colors hover:bg-orange-50/70"
 				>
-					<span class="mb-2 text-4xl">📷</span>
+					<Camera class="mb-2 h-8 w-8 text-slate-400" />
 					<span class="text-sm font-medium text-slate-600">Klik untuk upload foto</span>
 					<span class="text-xs text-slate-400">JPG, PNG, max 5MB per foto</span>
 					<input
@@ -457,7 +439,7 @@
 								onclick={() => removeImage(i)}
 								class="absolute top-1 right-1 flex h-6 w-6 items-center justify-center rounded-full bg-red-500 text-white opacity-0 transition-opacity group-hover:opacity-100"
 							>
-								×
+								<X class="h-4 w-4" />
 							</button>
 						</div>
 					{/each}

@@ -5,6 +5,7 @@
 	import markerIcon2x from 'leaflet/dist/images/marker-icon-2x.png';
 	import markerIcon from 'leaflet/dist/images/marker-icon.png';
 	import markerShadow from 'leaflet/dist/images/marker-shadow.png';
+	import { MapPin } from 'lucide-svelte';
 
 	let { latitude = $bindable(0), longitude = $bindable(0) } = $props();
 
@@ -35,7 +36,8 @@
 		map = L.map(mapContainer, {
 			center: defaultCenter,
 			zoom: 13,
-			zoomControl: true
+			zoomControl: true,
+			attributionControl: false
 		});
 
 		L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
@@ -125,28 +127,20 @@
 			onclick={handleUseMyLocation}
 			class="flex items-center gap-1 text-sm text-[#F97316] hover:underline"
 		>
-			<svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-				<path
-					stroke-linecap="round"
-					stroke-linejoin="round"
-					stroke-width="2"
-					d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"
-				/>
-				<path
-					stroke-linecap="round"
-					stroke-linejoin="round"
-					stroke-width="2"
-					d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
-				/>
-			</svg>
+			<MapPin class="h-4 w-4" />
 			Gunakan Lokasi Saya
 		</button>
 	</div>
 
-	<div
-		bind:this={mapContainer}
-		class="relative z-0 h-[300px] w-full rounded-2xl border-2 border-slate-100"
-	></div>
+	<div class="relative z-0 h-[300px] w-full overflow-hidden rounded-2xl border-2 border-slate-100">
+		<div bind:this={mapContainer} class="h-full w-full"></div>
+		<!-- Custom Cute Attribution -->
+		<div
+			class="absolute right-2 bottom-2 z-[400] rounded-full bg-white/80 px-2.5 py-0.5 text-[10px] font-bold text-slate-500 shadow-sm backdrop-blur-sm"
+		>
+			🗺️ <a href="https://openstreetmap.org" target="_blank" class="hover:underline">OSM</a>
+		</div>
+	</div>
 
 	{#if latitude && longitude}
 		<div class="rounded bg-slate-50 p-2 font-mono text-xs text-slate-500">
